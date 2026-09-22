@@ -1,1 +1,4 @@
-# ApiRadar - backend/scrapers/__init__.py
+from scrapers.base import BaseScraper, RawChange
+from scrapers.rss_scraper import RSSScraper
+
+__all__ = ["BaseScraper", "RawChange", "RSSScraper"]
