@@ -1,1 +1,3 @@
-# ApiRadar - backend/routers/changes.py
+from fastapi import APIRouter
+
+router = APIRouter(prefix="/changes", tags=["changes"])
