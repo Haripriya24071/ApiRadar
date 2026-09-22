@@ -15,3 +15,4 @@ celery[redis]
 redis
 resend
 python-dotenv
+pyyaml
