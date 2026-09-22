@@ -1,1 +1,7 @@
-# ApiRadar - .gitignore
+.env
+__pycache__/
+node_modules/
+.venv/
+*.pyc
+dist/
+.DS_Store
