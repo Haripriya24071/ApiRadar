@@ -29,6 +29,14 @@ class BaseScraper(ABC):
         raw_changes = await self.fetch(db)
         structured_changes = []
         for raw in raw_changes:
-            change_dict = summarize_change(raw)
-            structured_changes.append(change_dict)
+            extracted_changes = await summarize_change(raw)
+            for change in extracted_changes:
+                enriched = change.copy()
+                enriched.update({
+                    "api_id": raw.api_id,
+                    "source": raw.source,
+                    "published_at": raw.published_at,
+                    "raw_content": raw.content[:500],
+                })
+                structured_changes.append(enriched)
         return structured_changes
