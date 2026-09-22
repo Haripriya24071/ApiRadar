@@ -19,8 +19,8 @@ celery_app.conf.update(
     timezone="UTC",
     enable_utc=True,
     beat_schedule={
-        "scrape-rss-every-6-hours": {
-            "task": "tasks.scraper_tasks.run_all_rss_scrapers",
+        "run-all-scrapers-every-6-hours": {
+            "task": "tasks.scraper_tasks.run_all_scrapers",
             "schedule": 21600.0,
         },
         "diff-openapi-daily": {
