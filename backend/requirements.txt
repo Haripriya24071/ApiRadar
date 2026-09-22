@@ -1,1 +1,17 @@
-# ApiRadar - backend/requirements.txt
+fastapi
+uvicorn[standard]
+sqlalchemy[asyncio]
+asyncpg
+alembic
+pydantic[email]
+pydantic-settings
+python-jose[cryptography]
+passlib[bcrypt]
+httpx
+feedparser
+openai
+deepdiff
+celery[redis]
+redis
+resend
+python-dotenv
