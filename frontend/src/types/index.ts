@@ -18,8 +18,12 @@ export interface APICatalog {
   slug: string
   category?: string
   changelog_url?: string
+  rss_feed_url?: string
+  github_repo?: string
+  openapi_spec_url?: string
   logo_url?: string
   last_scraped_at?: string
+  created_at?: string
 }
 
 export interface WatchedAPI {

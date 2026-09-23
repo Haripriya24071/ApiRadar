@@ -59,28 +59,33 @@ async def get_changes(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    stmt_watched = (
-        select(WatchedAPI.api_id)
-        .join(StackProfile, WatchedAPI.profile_id == StackProfile.id)
-        .where(StackProfile.user_id == current_user.id)
-    )
-    res_watched = await db.execute(stmt_watched)
-    watched_api_ids = list(res_watched.scalars().all())
+    if api_slug:
+        query = (
+            select(ChangeEvent)
+            .join(APICatalog, ChangeEvent.api_id == APICatalog.id)
+            .where(APICatalog.slug == api_slug)
+            .options(selectinload(ChangeEvent.api))
+        )
+    else:
+        stmt_watched = (
+            select(WatchedAPI.api_id)
+            .join(StackProfile, WatchedAPI.profile_id == StackProfile.id)
+            .where(StackProfile.user_id == current_user.id)
+        )
+        res_watched = await db.execute(stmt_watched)
+        watched_api_ids = list(res_watched.scalars().all())
 
-    if not watched_api_ids:
-        return PaginatedChangesResponse(items=[], total=0, page=page, page_size=page_size)
+        if not watched_api_ids:
+            return PaginatedChangesResponse(items=[], total=0, page=page, page_size=page_size)
 
-    query = (
-        select(ChangeEvent)
-        .where(ChangeEvent.api_id.in_(watched_api_ids))
-        .options(selectinload(ChangeEvent.api))
-    )
+        query = (
+            select(ChangeEvent)
+            .where(ChangeEvent.api_id.in_(watched_api_ids))
+            .options(selectinload(ChangeEvent.api))
+        )
 
     if severity:
         query = query.where(ChangeEvent.severity == severity.upper())
-
-    if api_slug:
-        query = query.join(APICatalog, ChangeEvent.api_id == APICatalog.id).where(APICatalog.slug == api_slug)
 
     count_query = select(func.count()).select_from(query.subquery())
     total_res = await db.execute(count_query)

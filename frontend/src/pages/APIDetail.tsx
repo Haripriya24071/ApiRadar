@@ -11,7 +11,9 @@ import {
   Clock,
   ArrowLeft,
   Calendar,
-  Layers,
+  Github,
+  FileCode,
+  Info,
 } from 'lucide-react'
 import { apisAPI, changesAPI } from '../lib/api'
 import { useStack } from '../hooks/useStack'
@@ -24,6 +26,7 @@ export default function APIDetail() {
 
   const [activeSeverity, setActiveSeverity] = useState<string | null>(null)
   const [pageSize, setPageSize] = useState<number>(10)
+  const [logoFailed, setLogoFailed] = useState(false)
 
   // Fetch API detail by slug
   const apiQuery = useQuery<APIDetailResponse>({
@@ -59,7 +62,7 @@ export default function APIDetail() {
     if (!apiDetail) return
 
     if (!currentStack) {
-      // Auto create stack if user has no stack
+      // Auto create stack if user has no stack yet
       const newStack = await createStack.mutateAsync('My Stack')
       await watchAPI.mutateAsync({
         stackId: newStack.id,
@@ -82,7 +85,8 @@ export default function APIDetail() {
   }
 
   // Calculate live status badge
-  const allChanges = changesQuery.data?.items || apiDetail?.recent_changes || []
+  const fetchedChanges = changesQuery.data?.items || []
+  const allChanges = fetchedChanges.length > 0 ? fetchedChanges : (apiDetail?.recent_changes || [])
   const thirtyDaysAgo = new Date().getTime() - 30 * 24 * 60 * 60 * 1000
 
   const hasCriticalRecent = allChanges.some((c: ChangeEventResponse) => {
@@ -158,23 +162,21 @@ export default function APIDetail() {
       <div className="bg-surface border border-border rounded-xl p-6 shadow-lg space-y-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-center gap-4">
-            {apiDetail.logo_url ? (
+            {apiDetail.logo_url && !logoFailed ? (
               <img
                 src={apiDetail.logo_url}
                 alt={apiDetail.name}
-                className="w-14 h-14 rounded-xl object-contain bg-white/5 p-2 border border-border"
-                onError={(e) => {
-                  ;(e.target as HTMLElement).style.display = 'none'
-                }}
+                className="w-14 h-14 rounded-xl object-contain bg-white/5 p-2 border border-border shrink-0"
+                onError={() => setLogoFailed(true)}
               />
             ) : (
-              <div className="w-14 h-14 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold text-xl">
+              <div className="w-14 h-14 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold text-xl shrink-0">
                 {apiDetail.name.substring(0, 2).toUpperCase()}
               </div>
             )}
 
-            <div className="space-y-1">
-              <div className="flex items-center gap-3">
+            <div className="space-y-1.5">
+              <div className="flex flex-wrap items-center gap-3">
                 <h1 className="text-2xl font-bold text-white tracking-tight">
                   {apiDetail.name}
                 </h1>
@@ -187,7 +189,7 @@ export default function APIDetail() {
               </div>
 
               {/* Status Badge */}
-              <div className="pt-1">
+              <div className="pt-0.5">
                 <span
                   className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border ${statusBadge.style}`}
                 >
@@ -301,45 +303,84 @@ export default function APIDetail() {
         {/* C. API Info Sidebar */}
         <div className="space-y-6">
           <div className="bg-surface border border-border rounded-xl p-6 shadow-md space-y-4">
-            <h3 className="text-sm font-bold text-white uppercase tracking-wider border-b border-border pb-2">
-              API Overview
+            <h3 className="text-sm font-bold text-white uppercase tracking-wider border-b border-border pb-3 flex items-center gap-2">
+              <Info className="w-4 h-4 text-primary" /> API Overview
             </h3>
 
-            <div className="space-y-3 text-xs">
+            <div className="space-y-4 text-xs">
+              {/* Category */}
               <div>
-                <span className="text-muted block">Category</span>
-                <span className="text-slate-200 font-semibold mt-0.5 block">
+                <span className="text-muted block font-medium mb-1">Category</span>
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-background text-slate-200 font-semibold border border-border">
+                  <Tag className="w-3 h-3 text-primary" />
                   {apiDetail.category || 'General'}
                 </span>
               </div>
 
-              <div>
-                <span className="text-muted block">Slug Identifier</span>
-                <code className="text-primary font-mono bg-background px-2 py-1 rounded border border-border inline-block mt-0.5">
-                  {apiDetail.slug}
-                </code>
-              </div>
-
-              {apiDetail.changelog_url && (
+              {/* GitHub Repo Link */}
+              {apiDetail.github_repo && (
                 <div>
-                  <span className="text-muted block">Changelog URL</span>
+                  <span className="text-muted block font-medium mb-1">GitHub Repository</span>
                   <a
-                    href={apiDetail.changelog_url}
+                    href={
+                      apiDetail.github_repo.startsWith('http')
+                        ? apiDetail.github_repo
+                        : `https://github.com/${apiDetail.github_repo}`
+                    }
                     target="_blank"
                     rel="noreferrer"
-                    className="text-primary underline font-medium truncate block mt-0.5 hover:text-primary/80"
+                    className="inline-flex items-center gap-1.5 text-primary hover:underline font-semibold"
                   >
-                    {apiDetail.changelog_url}
+                    <Github className="w-3.5 h-3.5" />
+                    {apiDetail.github_repo}
+                    <ExternalLink className="w-3 h-3" />
                   </a>
                 </div>
               )}
 
+              {/* OpenAPI Spec Link */}
+              {apiDetail.openapi_spec_url && (
+                <div>
+                  <span className="text-muted block font-medium mb-1">OpenAPI Specification</span>
+                  <a
+                    href={apiDetail.openapi_spec_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 text-primary hover:underline font-semibold"
+                  >
+                    <FileCode className="w-3.5 h-3.5" />
+                    View OpenAPI Spec
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
+              )}
+
+              {/* First Added to ApiRadar Date */}
+              <div>
+                <span className="text-muted block font-medium mb-1">First Added</span>
+                <span className="text-slate-200 font-medium flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5 text-muted" />
+                  {apiDetail.created_at
+                    ? new Date(apiDetail.created_at).toLocaleDateString(undefined, {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                      })
+                    : 'Recently'}
+                </span>
+              </div>
+
+              {/* Last Scraped */}
               {apiDetail.last_scraped_at && (
                 <div>
-                  <span className="text-muted block">Last Scraped</span>
-                  <span className="text-slate-200 font-medium flex items-center gap-1 mt-0.5">
-                    <Clock className="w-3 h-3 text-primary" />
-                    {new Date(apiDetail.last_scraped_at).toLocaleDateString()}
+                  <span className="text-muted block font-medium mb-1">Last Checked</span>
+                  <span className="text-slate-200 font-medium flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-muted" />
+                    {new Date(apiDetail.last_scraped_at).toLocaleDateString(undefined, {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                    })}
                   </span>
                 </div>
               )}

@@ -22,6 +22,9 @@ class APICatalogResponse(BaseModel):
     changelog_url: Optional[str] = None
     logo_url: Optional[str] = None
     last_scraped_at: Optional[datetime] = None
+    github_repo: Optional[str] = None
+    openapi_spec_url: Optional[str] = None
+    created_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True

@@ -19,3 +19,5 @@ class APICatalog(Base):
     openapi_spec_url: Mapped[Optional[str]] = mapped_column(String(1024), nullable=True)
     logo_url: Mapped[Optional[str]] = mapped_column(String(1024), nullable=True)
     last_scraped_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True, default=datetime.utcnow)
+
