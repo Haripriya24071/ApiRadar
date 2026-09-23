@@ -42,7 +42,7 @@ export default function PackageUploader({ stackId, onAPIsAdded }: PackageUploade
 
       // Pre-select all matched APIs that are not already being watched
       const initialSelected = new Set<string>()
-      results.forEach((item) => {
+      results.forEach((item: ParsedAPIMatch) => {
         if (!item.already_watching) {
           initialSelected.add(item.api.id)
         }
