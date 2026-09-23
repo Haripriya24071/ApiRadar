@@ -2,10 +2,13 @@ import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Radio, RefreshCw, ChevronLeft, ChevronRight, Layers } from 'lucide-react'
 import { useChanges, ChangeEventResponse } from '../hooks/useChanges'
+import { useToast } from '../store/toastStore'
+import { changesAPI } from '../lib/api'
 import ImpactCard from '../components/dashboard/ImpactCard'
 
 export default function Feed() {
   const navigate = useNavigate()
+  const toast = useToast()
   const [activeSeverity, setActiveSeverity] = useState<string | null>(null)
   const [activeApiSlug, setActiveApiSlug] = useState<string | null>(null)
   const [page, setPage] = useState<number>(1)
@@ -25,8 +28,14 @@ export default function Feed() {
     setPage(1)
   }
 
-  const handleMarkResolved = (id: string) => {
+  const handleMarkResolved = async (id: string) => {
     setResolvedIds((prev) => new Set(prev).add(id))
+    toast.success('Change marked as resolved')
+    try {
+      await changesAPI.resolve(id)
+    } catch (err) {
+      console.error('Failed to mark resolved on backend:', err)
+    }
   }
 
   const totalItems = changes.data?.total || 0

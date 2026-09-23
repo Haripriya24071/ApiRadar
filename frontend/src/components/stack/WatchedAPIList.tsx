@@ -1,6 +1,8 @@
 import React, { useState } from 'react'
 import { X, Layers, Loader2, Globe, Tag } from 'lucide-react'
 import { WatchedAPI, useStack } from '../../hooks/useStack'
+import { useToast } from '../../store/toastStore'
+import { getErrorMessage } from '../../lib/api'
 
 interface WatchedAPIListProps {
   stackId: string
@@ -9,14 +11,16 @@ interface WatchedAPIListProps {
 
 export default function WatchedAPIList({ stackId, watchedApis }: WatchedAPIListProps) {
   const { unwatchAPI } = useStack()
+  const toast = useToast()
   const [removingApiId, setRemovingApiId] = useState<string | null>(null)
 
   const handleRemove = async (apiId: string) => {
     setRemovingApiId(apiId)
     try {
       await unwatchAPI.mutateAsync({ stackId, apiId })
-    } catch (err) {
-      console.error('Failed to unwatch API:', err)
+      toast.success('Removed from watchlist')
+    } catch (err: any) {
+      toast.error(getErrorMessage(err))
     } finally {
       setRemovingApiId(null)
     }

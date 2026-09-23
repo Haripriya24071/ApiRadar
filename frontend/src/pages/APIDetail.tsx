@@ -15,14 +15,16 @@ import {
   FileCode,
   Info,
 } from 'lucide-react'
-import { apisAPI, changesAPI } from '../lib/api'
+import { apisAPI, changesAPI, getErrorMessage } from '../lib/api'
 import { useStack } from '../hooks/useStack'
+import { useToast } from '../store/toastStore'
 import { APIDetailResponse, ChangeEventResponse } from '../types'
 import ImpactCard from '../components/dashboard/ImpactCard'
 
 export default function APIDetail() {
   const { slug } = useParams<{ slug: string }>()
   const { stacks, watchAPI, unwatchAPI, createStack } = useStack()
+  const toast = useToast()
 
   const [activeSeverity, setActiveSeverity] = useState<string | null>(null)
   const [pageSize, setPageSize] = useState<number>(10)
@@ -61,26 +63,33 @@ export default function APIDetail() {
   const handleToggleWatch = async () => {
     if (!apiDetail) return
 
-    if (!currentStack) {
-      // Auto create stack if user has no stack yet
-      const newStack = await createStack.mutateAsync('My Stack')
-      await watchAPI.mutateAsync({
-        stackId: newStack.id,
-        apiId: apiDetail.id,
-      })
-      return
-    }
+    try {
+      if (!currentStack) {
+        // Auto create stack if user has no stack yet
+        const newStack = await createStack.mutateAsync('My Stack')
+        await watchAPI.mutateAsync({
+          stackId: newStack.id,
+          apiId: apiDetail.id,
+        })
+        toast.success(`Now watching ${apiDetail.name}`)
+        return
+      }
 
-    if (isWatched && watchedItem) {
-      await unwatchAPI.mutateAsync({
-        stackId: currentStack.id,
-        apiId: apiDetail.id,
-      })
-    } else {
-      await watchAPI.mutateAsync({
-        stackId: currentStack.id,
-        apiId: apiDetail.id,
-      })
+      if (isWatched && watchedItem) {
+        await unwatchAPI.mutateAsync({
+          stackId: currentStack.id,
+          apiId: apiDetail.id,
+        })
+        toast.success('Removed from watchlist')
+      } else {
+        await watchAPI.mutateAsync({
+          stackId: currentStack.id,
+          apiId: apiDetail.id,
+        })
+        toast.success(`Now watching ${apiDetail.name}`)
+      }
+    } catch (err: any) {
+      toast.error(getErrorMessage(err))
     }
   }
 

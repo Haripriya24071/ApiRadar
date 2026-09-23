@@ -2,6 +2,8 @@ import React, { useState, useRef } from 'react'
 import { Upload, FileCode, Check, AlertCircle, Loader2, Plus, Sparkles, XCircle } from 'lucide-react'
 import { useStack, ParsedAPIMatch } from '../../hooks/useStack'
 import { readFileAsText, parsePackageJSON } from '../../lib/packageParser'
+import { useToast } from '../../store/toastStore'
+import { getErrorMessage } from '../../lib/api'
 
 interface PackageUploaderProps {
   stackId: string
@@ -10,6 +12,7 @@ interface PackageUploaderProps {
 
 export default function PackageUploader({ stackId, onAPIsAdded }: PackageUploaderProps) {
   const { parsePackage, watchAPI } = useStack()
+  const toast = useToast()
 
   const [isDragging, setIsDragging] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -39,6 +42,7 @@ export default function PackageUploader({ stackId, onAPIsAdded }: PackageUploade
       })
 
       setMatchedAPIs(results)
+      toast.success(`Found ${results.length} matching APIs in your stack`)
 
       // Pre-select all matched APIs that are not already being watched
       const initialSelected = new Set<string>()
@@ -50,9 +54,9 @@ export default function PackageUploader({ stackId, onAPIsAdded }: PackageUploade
       setSelectedApiIds(initialSelected)
     } catch (err: any) {
       console.error('Failed to parse package.json:', err)
-      setError(
-        err?.response?.data?.detail || err?.message || 'Failed to parse package.json file.'
-      )
+      const msg = getErrorMessage(err)
+      setError(msg)
+      toast.error(msg)
     }
   }
 

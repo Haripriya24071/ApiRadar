@@ -96,6 +96,8 @@ export const changesAPI = {
     api.get('/api/changes/critical').then((res) => res.data),
   getById: (id: string): Promise<ChangeEvent> =>
     api.get(`/api/changes/${id}`).then((res) => res.data),
+  resolve: (id: string): Promise<{ status: string; message: string; change_id: string }> =>
+    api.patch(`/api/changes/${id}/resolve`).then((res) => res.data),
 }
 
 export const apisAPI = {

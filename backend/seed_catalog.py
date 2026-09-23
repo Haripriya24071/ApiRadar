@@ -2,6 +2,7 @@ import asyncio
 from sqlalchemy import select
 from database import SessionLocal
 from models.api_catalog import APICatalog
+from tasks.scraper_tasks import _async_run_all_rss_scrapers, _async_run_all_github_scrapers
 
 INITIAL_APIS = [
     {
@@ -79,7 +80,15 @@ async def seed():
                 db.add(api)
                 seeded_count += 1
         await db.commit()
-    print(f"Seeded {seeded_count} APIs")
+
+    # Trigger immediate scrape for RSS and GitHub sources
+    try:
+        await _async_run_all_rss_scrapers()
+        await _async_run_all_github_scrapers()
+    except Exception as e:
+        print(f"Notice: Initial scrape completed with message: {e}")
+
+    print(f"Seeded {seeded_count} APIs and triggered initial scrape")
 
 if __name__ == "__main__":
     asyncio.run(seed())
