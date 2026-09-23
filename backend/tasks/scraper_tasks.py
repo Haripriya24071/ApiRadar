@@ -37,6 +37,8 @@ async def _async_run_all_rss_scrapers():
             except Exception as e:
                 print(f"Error running RSS scraper for API {api.slug}: {e}")
 
+            await asyncio.sleep(0.5)
+
         await db.commit()
 
     return {"status": "ok", "scrapers_run": scrapers_run, "changes_found": total_changes}
@@ -68,6 +70,8 @@ async def _async_run_all_github_scrapers():
                 api.last_scraped_at = datetime.now(timezone.utc)
             except Exception as e:
                 print(f"Error running GitHub scraper for API {api.slug}: {e}")
+
+            await asyncio.sleep(0.5)
 
         await db.commit()
 

@@ -45,6 +45,23 @@ api.interceptors.response.use(
   }
 )
 
+export function getErrorMessage(error: any): string {
+  if (error?.response?.data?.error) {
+    return typeof error.response.data.error === 'string'
+      ? error.response.data.error
+      : JSON.stringify(error.response.data.error)
+  }
+  if (error?.response?.data?.detail) {
+    return typeof error.response.data.detail === 'string'
+      ? error.response.data.detail
+      : JSON.stringify(error.response.data.detail)
+  }
+  if (error?.message) {
+    return error.message
+  }
+  return 'An unexpected error occurred'
+}
+
 export const authAPI = {
   register: (data: { email: string; password: string }): Promise<{ token: string; user: User }> =>
     api.post('/api/auth/register', data).then((res) => res.data),

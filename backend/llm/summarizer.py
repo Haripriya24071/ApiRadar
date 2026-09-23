@@ -81,9 +81,9 @@ async def summarize_change(raw) -> List[Dict[str, Any]]:
         "If this content contains no breaking changes or API changes at all, return {\"changes\": []}."
     )
 
-    try:
+    async def _call_openai():
         client = AsyncOpenAI(api_key=api_key)
-        response = await client.chat.completions.create(
+        return await client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": system_prompt},
@@ -92,6 +92,19 @@ async def summarize_change(raw) -> List[Dict[str, Any]]:
             response_format={"type": "json_object"},
             max_tokens=1000,
         )
+
+    try:
+        try:
+            response = await _call_openai()
+        except Exception as api_err:
+            err_str = str(api_err).lower()
+            if "429" in err_str or "rate limit" in err_str or "ratelimit" in err_str:
+                import asyncio
+                print("OpenAI rate limit hit (429). Retrying in 10 seconds...")
+                await asyncio.sleep(10)
+                response = await _call_openai()
+            else:
+                raise api_err
 
         raw_json_str = response.choices[0].message.content
         data = json.loads(raw_json_str)

@@ -1,6 +1,8 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import { useToast } from '../store/toastStore'
+import { getErrorMessage } from '../lib/api'
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -9,6 +11,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false)
 
   const { login } = useAuth()
+  const toast = useToast()
   const navigate = useNavigate()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -18,10 +21,12 @@ export default function Login() {
 
     try {
       await login(email, password)
+      toast.success('Welcome back!')
       navigate('/dashboard/feed')
     } catch (err: any) {
-      const msg = err.response?.data?.detail || 'Invalid email or password'
+      const msg = getErrorMessage(err)
       setError(msg)
+      toast.error(msg)
     } finally {
       setLoading(false)
     }
@@ -34,7 +39,7 @@ export default function Login() {
         <p className="text-sm text-muted text-center mb-6">Sign in to your ApiRadar account</p>
 
         {error && (
-          <div className="mb-4 p-3 bg-critical/10 border border-critical/30 rounded-lg text-critical text-sm text-center">
+          <div className="mb-4 p-3 bg-critical/10 border border-critical/30 rounded-lg text-critical text-sm text-center font-medium">
             {error}
           </div>
         )}

@@ -12,6 +12,7 @@ import MyStack from './pages/MyStack'
 import BrowseAPIs from './pages/BrowseAPIs'
 import APIDetail from './pages/APIDetail'
 import Settings from './pages/Settings'
+import Toast from './components/ui/Toast'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -40,6 +41,7 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
+        <Toast />
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />

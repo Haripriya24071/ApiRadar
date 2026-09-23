@@ -1,6 +1,8 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import { useToast } from '../store/toastStore'
+import { getErrorMessage } from '../lib/api'
 
 export default function Register() {
   const [email, setEmail] = useState('')
@@ -10,6 +12,7 @@ export default function Register() {
   const [loading, setLoading] = useState(false)
 
   const { register } = useAuth()
+  const toast = useToast()
   const navigate = useNavigate()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -17,12 +20,16 @@ export default function Register() {
     setError(null)
 
     if (password.length < 8) {
-      setError('Password must be at least 8 characters long')
+      const msg = 'Password must be at least 8 characters long'
+      setError(msg)
+      toast.warning(msg)
       return
     }
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match')
+      const msg = 'Passwords do not match'
+      setError(msg)
+      toast.warning(msg)
       return
     }
 
@@ -30,10 +37,12 @@ export default function Register() {
 
     try {
       await register(email, password)
+      toast.success('Account created!')
       navigate('/dashboard/stack')
     } catch (err: any) {
-      const msg = err.response?.data?.detail || 'Registration failed. Please try again.'
+      const msg = getErrorMessage(err)
       setError(msg)
+      toast.error(msg)
     } finally {
       setLoading(false)
     }
@@ -46,7 +55,7 @@ export default function Register() {
         <p className="text-sm text-muted text-center mb-6">Start monitoring API breaking changes in real time</p>
 
         {error && (
-          <div className="mb-4 p-3 bg-critical/10 border border-critical/30 rounded-lg text-critical text-sm text-center">
+          <div className="mb-4 p-3 bg-critical/10 border border-critical/30 rounded-lg text-critical text-sm text-center font-medium">
             {error}
           </div>
         )}

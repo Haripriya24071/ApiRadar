@@ -91,7 +91,16 @@ async def get_changes(
     total_res = await db.execute(count_query)
     total = total_res.scalar() or 0
 
-    query = query.order_by(ChangeEvent.created_at.desc()).offset((page - 1) * page_size).limit(page_size)
+    offset = (page - 1) * page_size
+    if total > 0 and offset >= total:
+        return PaginatedChangesResponse(
+            items=[],
+            total=total,
+            page=page,
+            page_size=page_size
+        )
+
+    query = query.order_by(ChangeEvent.created_at.desc()).offset(offset).limit(page_size)
     items_res = await db.execute(query)
     items = items_res.scalars().all()
 

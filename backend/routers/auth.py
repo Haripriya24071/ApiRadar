@@ -39,8 +39,8 @@ async def register(req: RegisterRequest, db: AsyncSession = Depends(get_db)):
     existing_user = result.scalar_one_or_none()
     if existing_user:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email is already registered"
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Email already registered"
         )
     
     hashed_pwd = hash_password(req.password)
