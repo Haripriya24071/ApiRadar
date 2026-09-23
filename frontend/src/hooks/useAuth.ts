@@ -8,7 +8,7 @@ export function useAuth() {
 
   const login = async (email: string, password: string) => {
     const res = await authAPI.login({ email, password })
-    setAuth(res.user, res.access_token)
+    setAuth(res.user, res.token)
     return res.user
   }
 
