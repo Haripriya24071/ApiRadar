@@ -54,6 +54,8 @@ export interface ChangeEvent {
   api: APIBase
 }
 
+export type ChangeEventResponse = ChangeEvent
+
 export interface PaginatedChangesResponse {
   items: ChangeEvent[]
   total: number
