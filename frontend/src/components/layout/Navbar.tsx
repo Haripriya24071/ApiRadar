@@ -29,7 +29,7 @@ export default function Navbar() {
     },
   })
 
-  const unreadCount = countData?.unread || 0
+  const unreadCount = countData?.unread_count || 0
   const notificationsList = notificationsData?.data || []
 
   const getSeverityBadgeClass = (severity: string) => {
