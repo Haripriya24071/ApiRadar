@@ -7,6 +7,7 @@ from models.api_catalog import APICatalog
 from models.change_event import ChangeEvent
 from scrapers.rss_scraper import RSSScraper
 from scrapers.github_scraper import GitHubReleaseScraper
+from services.notification_service import create_notifications_for_change
 
 async def _async_run_all_rss_scrapers():
     scrapers_run = 0
@@ -28,6 +29,8 @@ async def _async_run_all_rss_scrapers():
                 for change_data in changes:
                     event = ChangeEvent(**change_data)
                     db.add(event)
+                    await db.commit()
+                    await create_notifications_for_change(event, db)
                     total_changes += 1
 
                 api.last_scraped_at = datetime.now(timezone.utc)
@@ -58,6 +61,8 @@ async def _async_run_all_github_scrapers():
                 for change_data in changes:
                     event = ChangeEvent(**change_data)
                     db.add(event)
+                    await db.commit()
+                    await create_notifications_for_change(event, db)
                     total_changes += 1
 
                 api.last_scraped_at = datetime.now(timezone.utc)
@@ -81,7 +86,10 @@ async def _async_scrape_single_api(api_slug: str):
                 rss_scraper = RSSScraper(api)
                 rss_changes = await rss_scraper.run(db)
                 for change_data in rss_changes:
-                    db.add(ChangeEvent(**change_data))
+                    event = ChangeEvent(**change_data)
+                    db.add(event)
+                    await db.commit()
+                    await create_notifications_for_change(event, db)
                     total_changes += 1
             except Exception as e:
                 print(f"Error in single RSS scrape for {api_slug}: {e}")
@@ -91,7 +99,10 @@ async def _async_scrape_single_api(api_slug: str):
                 gh_scraper = GitHubReleaseScraper(api)
                 gh_changes = await gh_scraper.run(db)
                 for change_data in gh_changes:
-                    db.add(ChangeEvent(**change_data))
+                    event = ChangeEvent(**change_data)
+                    db.add(event)
+                    await db.commit()
+                    await create_notifications_for_change(event, db)
                     total_changes += 1
             except Exception as e:
                 print(f"Error in single GitHub scrape for {api_slug}: {e}")

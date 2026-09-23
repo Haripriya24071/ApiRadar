@@ -1,4 +1,5 @@
 from celery import Celery
+from celery.schedules import crontab
 from config import settings
 
 celery_app = Celery(
@@ -29,7 +30,7 @@ celery_app.conf.update(
         },
         "send-digest-daily": {
             "task": "tasks.email_tasks.send_daily_digests",
-            "schedule": 86400.0,
+            "schedule": crontab(hour=8, minute=0),
         },
     },
 )

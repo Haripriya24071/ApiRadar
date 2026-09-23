@@ -6,6 +6,7 @@ from database import SessionLocal
 from models.api_catalog import APICatalog
 from models.change_event import ChangeEvent
 from diff.openapi_differ import diff_api_spec
+from services.notification_service import create_notifications_for_change
 
 async def _async_run_all_openapi_diffs():
     apis_diffed = 0
@@ -26,6 +27,8 @@ async def _async_run_all_openapi_diffs():
                 for change_data in changes:
                     event = ChangeEvent(**change_data)
                     db.add(event)
+                    await db.commit()
+                    await create_notifications_for_change(event, db)
                     total_changes += 1
             except Exception as e:
                 print(f"Error running OpenAPI diff for API {api.slug}: {e}")
