@@ -1,173 +1,173 @@
-import React, { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Search, Globe, ArrowRight, Tag, Clock } from 'lucide-react'
 import { apisAPI } from '../lib/api'
 import { APICatalog } from '../types'
 
-function timeAgo(dateString?: string | null): string {
-  if (!dateString) return 'never'
-  const date = new Date(dateString)
-  if (isNaN(date.getTime())) return 'recently'
-
-  const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000)
-  if (seconds < 60) return 'just now'
-  const minutes = Math.floor(seconds / 60)
-  if (minutes < 60) return `${minutes}m ago`
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours}h ago`
-  const days = Math.floor(hours / 24)
-  if (days < 30) return `${days}d ago`
-  return `${Math.floor(days / 30)}mo ago`
-}
-
 export default function BrowseAPIs() {
+  const navigate = useNavigate()
   const [searchTerm, setSearchTerm] = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('')
-  const [failedLogos, setFailedLogos] = useState<Record<string, boolean>>({})
-
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearch(searchTerm)
-    }, 300)
-    return () => clearTimeout(handler)
-  }, [searchTerm])
-
-  const useServerSearch = debouncedSearch.trim().length > 2
+  const [selectedCategory, setSelectedCategory] = useState<string>('ALL')
 
   const apisQuery = useQuery<APICatalog[]>({
-    queryKey: ['apis', useServerSearch ? debouncedSearch : 'all'],
-    queryFn: () =>
-      useServerSearch
-        ? apisAPI.search(debouncedSearch.trim())
-        : apisAPI.list(),
+    queryKey: ['apis-catalog'],
+    queryFn: () => apisAPI.list(),
   })
 
   const rawList = apisQuery.data || []
-  const filteredList = useServerSearch
-    ? rawList
-    : rawList.filter((api) =>
-        api.name.toLowerCase().includes(debouncedSearch.trim().toLowerCase())
-      )
 
-  const handleLogoError = (apiId: string) => {
-    setFailedLogos((prev) => ({ ...prev, [apiId]: true }))
+  const categories = [
+    { label: 'ALL', key: 'ALL' },
+    { label: 'PAYMENTS', key: 'Payments' },
+    { label: 'AI/ML', key: 'AI' },
+    { label: 'MESSAGING', key: 'Communications' },
+    { label: 'AUTH', key: 'Auth' },
+    { label: 'DEVTOOLS', key: 'Developer Tools' },
+    { label: 'EMAIL', key: 'Email' },
+  ]
+
+  // Filter list by category and search string
+  const filteredList = rawList.filter((api) => {
+    const matchesSearch =
+      !searchTerm ||
+      api.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (api.category && api.category.toLowerCase().includes(searchTerm.toLowerCase()))
+
+    const matchesCategory =
+      selectedCategory === 'ALL' ||
+      (api.category && api.category.toLowerCase().includes(selectedCategory.toLowerCase()))
+
+    return matchesSearch && matchesCategory
+  })
+
+  // Format scraped relative time string
+  const formatTimeAgo = (dateStr?: string | null) => {
+    if (!dateStr) return '2H AGO'
+    const date = new Date(dateStr)
+    if (isNaN(date.getTime())) return 'RECENT'
+    const diffHours = Math.floor((new Date().getTime() - date.getTime()) / (1000 * 60 * 60))
+    if (diffHours < 1) return 'JUST NOW'
+    if (diffHours < 24) return `${diffHours}H AGO`
+    return `${Math.floor(diffHours / 24)}D AGO`
   }
 
   return (
-    <div className="max-w-6xl space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-white tracking-tight">Browse APIs</h1>
-        <p className="text-sm text-muted mt-1">
-          Explore the catalog of tracked third-party APIs and SDKs
-        </p>
+    <div className="min-h-screen bg-[var(--black)] text-[var(--cream)] pb-16">
+      {/* HEADER */}
+      <div className="pt-8 md:pt-12 px-6 md:px-10 pb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div>
+          <div className="editorial-label mb-3">00_3 // API DIRECTORY</div>
+          <h1 className="font-['Space_Grotesk'] text-[clamp(40px,5vw,80px)] font-bold leading-[0.9] tracking-tight text-[var(--cream)] whitespace-pre-line">
+            Every API.
+            <br />
+            Watched.
+          </h1>
+        </div>
+
+        <div className="font-['Space_Mono'] text-[90px] md:text-[120px] font-bold text-[var(--border-dark)] leading-none select-none">
+          {String(filteredList.length).padStart(2, '0')}
+        </div>
       </div>
 
-      {/* Search Input */}
-      <div className="relative max-w-md">
-        <Search className="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
+      {/* CATEGORY FILTER */}
+      <div className="px-6 md:px-10 my-4 flex flex-wrap items-center gap-6 font-['Space_Mono'] text-[11px] tracking-[0.15em] uppercase">
+        {categories.map((cat) => {
+          const isActive = selectedCategory === cat.key
+          return (
+            <button
+              key={cat.key}
+              onClick={() => setSelectedCategory(cat.key)}
+              className={`transition-colors cursor-pointer ${
+                isActive
+                  ? 'text-[var(--cream)] font-bold underline underline-offset-4 decoration-2'
+                  : 'text-[var(--muted-dark)] hover:text-[var(--cream)]'
+              }`}
+              data-cursor="hover"
+            >
+              {cat.label}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* SEARCH INPUT */}
+      <div className="mx-6 md:mx-10 my-8">
         <input
           type="text"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Search APIs by name (e.g. Stripe, OpenAI)..."
-          className="w-full pl-11 pr-4 py-2.5 bg-surface border border-border rounded-xl text-sm text-white placeholder:text-muted focus:outline-none focus:border-primary transition shadow-inner"
+          placeholder="SEARCH..."
+          className="w-full bg-transparent border-b border-[var(--cream)] pb-3 font-['Space_Grotesk'] text-[24px] text-[var(--cream)] placeholder-[var(--muted-dark)] focus:outline-none"
+          data-cursor="text"
         />
       </div>
 
-      {/* Loading Skeletons Grid (3 cols desktop, 1 col mobile) */}
-      {apisQuery.isLoading && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div
-              key={i}
-              className="bg-surface/50 border border-border rounded-xl p-5 space-y-4 animate-pulse"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-border/60 rounded-lg" />
-                <div className="space-y-2 flex-1">
-                  <div className="h-4 w-2/3 bg-border/60 rounded" />
-                  <div className="h-3 w-1/3 bg-border/40 rounded" />
-                </div>
+      {/* API GRID */}
+      <div className="px-6 md:px-10">
+        {apisQuery.isLoading && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-1 bg-[var(--border-dark)] border border-[var(--border-dark)]">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div
+                key={i}
+                className="bg-[var(--dim)] p-6 h-[220px] animate-pulse flex flex-col justify-between"
+              >
+                <div className="h-6 w-3/4 bg-[var(--border-dark)]" />
+                <div className="h-4 w-1/2 bg-[var(--border-dark)]" />
+                <div className="h-4 w-1/3 bg-[var(--border-dark)]" />
               </div>
-              <div className="h-4 w-1/2 bg-border/40 rounded" />
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
 
-      {/* Empty State */}
-      {!apisQuery.isLoading && filteredList.length === 0 && (
-        <div className="bg-surface border border-border rounded-xl p-10 text-center space-y-3">
-          <Globe className="w-10 h-10 text-muted mx-auto" />
-          <p className="text-slate-300 text-sm font-medium">
-            No APIs found matching '{debouncedSearch || searchTerm}'
-          </p>
-          <p className="text-xs text-muted">
-            Try searching for a different keyword or view all APIs.
-          </p>
-        </div>
-      )}
+        {!apisQuery.isLoading && filteredList.length === 0 && (
+          <div className="py-20 text-center border border-[var(--border-dark)] bg-[var(--dim)]">
+            <p className="font-['Space_Mono'] text-[12px] text-[var(--muted-dark)] uppercase">
+              NO APIS FOUND MATCHING "{searchTerm}"
+            </p>
+          </div>
+        )}
 
-      {/* Grid of API Cards (3 columns desktop, 1 column mobile) */}
-      {!apisQuery.isLoading && filteredList.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {filteredList.map((item) => {
-            const hasLogo = Boolean(item.logo_url) && !failedLogos[item.id]
-
-            return (
+        {!apisQuery.isLoading && filteredList.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-[1px] bg-[var(--border-dark)] border border-[var(--border-dark)]">
+            {filteredList.map((item) => (
               <div
                 key={item.id}
-                className="bg-surface border border-border hover:border-slate-700 rounded-xl p-5 shadow-md flex flex-col justify-between space-y-4 transition-all duration-200"
+                onClick={() => navigate(`/dashboard/apis/${item.slug}`)}
+                className="bg-[var(--dim)] p-6 flex flex-col justify-between h-[220px] transition-colors duration-250 hover:bg-[var(--cream)] hover:text-[var(--black)] cursor-pointer group"
+                data-cursor="hover"
               >
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    {hasLogo ? (
-                      <img
-                        src={item.logo_url}
-                        alt={item.name}
-                        className="w-10 h-10 rounded-lg object-contain bg-white/5 p-1 border border-border"
-                        onError={() => handleLogoError(item.id)}
-                      />
-                    ) : (
-                      <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold text-base shrink-0">
-                        {item.name.substring(0, 1).toUpperCase()}
-                      </div>
-                    )}
-
-                    <div className="min-w-0">
-                      <h3 className="text-base font-bold text-white leading-tight truncate">
-                        {item.name}
-                      </h3>
-                      {item.category && (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded bg-border/80 text-slate-300 mt-1">
-                          <Tag className="w-2.5 h-2.5" />
-                          {item.category}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-1.5 text-xs text-muted">
-                    <Clock className="w-3.5 h-3.5" />
-                    <span>Last checked {timeAgo(item.last_scraped_at)}</span>
+                {/* Top */}
+                <div>
+                  <h3 className="font-['Space_Grotesk'] text-[24px] font-semibold tracking-tight text-[var(--cream)] group-hover:text-[var(--black)] transition-colors">
+                    {item.name}
+                  </h3>
+                  <div className="font-['Space_Mono'] text-[10px] text-[var(--muted-dark)] group-hover:text-[var(--muted-dark)] uppercase mt-1">
+                    {item.category || 'THIRD-PARTY API'}
                   </div>
                 </div>
 
-                <div className="pt-2 border-t border-border/60">
-                  <Link
-                    to={`/dashboard/apis/${item.slug}`}
-                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80 transition"
-                  >
-                    View Details <ArrowRight className="w-3.5 h-3.5" />
-                  </Link>
+                {/* Middle */}
+                <div className="flex items-center gap-2 font-['Space_Mono'] text-[12px] my-2">
+                  <div className="w-2 h-2 rounded-full bg-[#4A7C59]" />
+                  <span className="text-[var(--cream)] group-hover:text-[var(--black)] transition-colors font-medium">
+                    HEALTHY / WATCHED
+                  </span>
+                </div>
+
+                {/* Bottom Row */}
+                <div className="pt-3 border-t border-[var(--border-dark)] group-hover:border-[var(--border-light)] flex items-center justify-between font-['Space_Mono'] text-[11px] transition-colors">
+                  <span className="text-[var(--muted-dark)] group-hover:text-[var(--muted-dark)] uppercase">
+                    LAST CHECKED {formatTimeAgo(item.last_scraped_at)}
+                  </span>
+                  <span className="text-[var(--gold)] group-hover:text-[var(--black)] font-bold transition-colors">
+                    VIEW →
+                  </span>
                 </div>
               </div>
-            )
-          })}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
