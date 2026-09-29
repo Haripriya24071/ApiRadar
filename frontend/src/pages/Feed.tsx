@@ -1,6 +1,5 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Radio, RefreshCw, ChevronLeft, ChevronRight, Layers } from 'lucide-react'
 import { useChanges, ChangeEventResponse } from '../hooks/useChanges'
 import { useToast } from '../store/toastStore'
 import { changesAPI } from '../lib/api'
@@ -10,15 +9,14 @@ export default function Feed() {
   const navigate = useNavigate()
   const toast = useToast()
   const [activeSeverity, setActiveSeverity] = useState<string | null>(null)
-  const [activeApiSlug, setActiveApiSlug] = useState<string | null>(null)
+  const [sortBy, setSortBy] = useState<'newest' | 'deadline'>('newest')
   const [page, setPage] = useState<number>(1)
   const [resolvedIds, setResolvedIds] = useState<Set<string>>(new Set())
 
-  const pageSize = 10
+  const pageSize = 12
 
-  const { changes } = useChanges({
+  const { changes, criticalChanges } = useChanges({
     severity: activeSeverity || undefined,
-    api_slug: activeApiSlug || undefined,
     page,
     page_size: pageSize,
   })
@@ -30,7 +28,7 @@ export default function Feed() {
 
   const handleMarkResolved = async (id: string) => {
     setResolvedIds((prev) => new Set(prev).add(id))
-    toast.success('Change marked as resolved')
+    toast.success('Change event marked as resolved')
     try {
       await changesAPI.resolve(id)
     } catch (err) {
@@ -39,152 +37,181 @@ export default function Feed() {
   }
 
   const totalItems = changes.data?.total || 0
-  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize))
   const rawItems = changes.data?.items || []
   const visibleItems = rawItems.filter((item: ChangeEventResponse) => !resolvedIds.has(item.id))
 
+  // Compute severity counts
+  const criticalCount = criticalChanges.data?.length || 0
+  const warningCount = rawItems.filter((i: any) => i.severity === 'WARNING').length
+  const infoCount = rawItems.filter((i: any) => i.severity === 'INFO').length
+
+  // Sort visible items if deadline sort is selected
+  const sortedItems = [...visibleItems].sort((a, b) => {
+    if (sortBy === 'deadline') {
+      if (!a.deadline_date) return 1
+      if (!b.deadline_date) return -1
+      return new Date(a.deadline_date).getTime() - new Date(b.deadline_date).getTime()
+    }
+    return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+  })
+
   const severityTabs = [
-    { label: 'All', value: null },
-    { label: '🔴 Critical', value: 'CRITICAL' },
-    { label: '🟡 Warning', value: 'WARNING' },
-    { label: '🟢 Info', value: 'INFO' },
+    { label: 'ALL', value: null },
+    { label: 'CRITICAL', value: 'CRITICAL' },
+    { label: 'WARNING', value: 'WARNING' },
+    { label: 'INFO', value: 'INFO' },
+  ]
+
+  const tickerItems = [
+    'BREAKING CHANGE DETECTED',
+    'STRIPE API UPDATED',
+    'OPENAI DEPRECATION NOTICE',
+    'GITHUB AUTH SPEC CHANGE',
+    'SUPABASE SCHEMA DIFF',
+    'TWILIO API SUNSET',
   ]
 
   return (
-    <div className="max-w-4xl space-y-6">
-      {/* A. Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+    <div className="min-h-screen bg-[var(--black)] text-[var(--cream)]">
+      {/* PAGE HEADER */}
+      <div className="pt-8 md:pt-12 px-6 md:px-10 pb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Change Feed</h1>
-          <p className="text-sm text-muted mt-1">
-            Breaking changes across your watched APIs
-          </p>
+          <div className="editorial-label mb-3">00_1 // CHANGE FEED</div>
+          <h1 className="font-['Space_Grotesk'] text-[clamp(40px,5vw,72px)] font-bold leading-[0.9] tracking-tight text-[var(--cream)]">
+            Intelligence
+            <br />
+            Briefing
+          </h1>
         </div>
-        <div className="text-xs font-semibold px-3 py-1.5 rounded-full bg-surface border border-border text-slate-300 self-start sm:self-auto">
-          {totalItems} {totalItems === 1 ? 'change' : 'changes'} detected
+
+        {/* Stat Pills Column */}
+        <div className="flex flex-col gap-2 self-start md:self-auto font-['Space_Mono'] text-[10px] uppercase">
+          <div className="severity-stamp critical">
+            {criticalCount} CRITICAL
+          </div>
+          <div className="severity-stamp warning">
+            {warningCount} WARNING
+          </div>
+          <div className="severity-stamp info">
+            {infoCount} INFO
+          </div>
         </div>
       </div>
 
-      {/* B. Filter Bar */}
-      <div className="border-b border-border flex items-center gap-6 overflow-x-auto pb-1 scrollbar-none">
-        {severityTabs.map((tab) => {
-          const isActive = activeSeverity === tab.value
-          return (
-            <button
-              key={tab.label}
-              onClick={() => handleSeverityChange(tab.value)}
-              className={`pb-2.5 text-sm font-semibold transition relative whitespace-nowrap ${
-                isActive
-                  ? 'text-primary'
-                  : 'text-muted hover:text-slate-200'
-              }`}
-            >
-              {tab.label}
-              {isActive && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />
-              )}
-            </button>
-          )
-        })}
+      {/* TICKER BAND */}
+      <div className="ticker-band border-y border-[var(--border-dark)]">
+        <div className="ticker-inner">
+          {[...tickerItems, ...tickerItems, ...tickerItems].map((item, idx) => (
+            <span key={idx} className="inline-flex items-center gap-3">
+              {item} <span className="opacity-50">·</span>
+            </span>
+          ))}
+        </div>
       </div>
 
-      {/* C. Change List */}
-      <div className="space-y-4">
+      {/* FILTER BAR */}
+      <div className="sticky top-[52px] z-30 bg-[var(--black)] border-b border-[var(--border-dark)] px-6 md:px-10 py-4 flex flex-wrap items-center justify-between gap-4">
+        {/* Severity Tabs */}
+        <div className="flex items-center gap-6 font-['Space_Mono'] text-[11px] uppercase tracking-wider">
+          {severityTabs.map((tab) => {
+            const isActive = activeSeverity === tab.value
+            return (
+              <button
+                key={tab.label}
+                onClick={() => handleSeverityChange(tab.value)}
+                className={`pb-1 transition-colors relative ${
+                  isActive
+                    ? 'text-[var(--cream)] font-bold border-b-2 border-[var(--cream)]'
+                    : 'text-[var(--muted-dark)] hover:text-[var(--cream)]'
+                }`}
+                data-cursor="hover"
+              >
+                {tab.label}
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Sort Toggle */}
+        <div className="flex items-center gap-2 font-['Space_Mono'] text-[10px] text-[var(--muted-dark)] uppercase">
+          <span>SORT:</span>
+          <button
+            onClick={() => setSortBy(sortBy === 'newest' ? 'deadline' : 'newest')}
+            className="text-[var(--gold)] font-bold hover:underline tracking-wider"
+            data-cursor="hover"
+          >
+            {sortBy === 'newest' ? 'NEWEST →' : 'DEADLINE →'}
+          </button>
+        </div>
+      </div>
+
+      {/* FEED CONTENT */}
+      <div className="px-6 md:px-10 py-10">
         {changes.isLoading && (
-          <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {[1, 2, 3, 4].map((i) => (
               <div
                 key={i}
-                className="bg-surface/50 border border-border rounded-xl p-6 space-y-4 animate-pulse"
+                className="h-[320px] bg-[var(--dim)] border border-[var(--border-dark)] animate-pulse p-6 flex flex-col justify-between"
               >
-                <div className="flex justify-between items-center">
-                  <div className="h-6 w-24 bg-border/60 rounded-full" />
-                  <div className="h-4 w-20 bg-border/60 rounded" />
-                </div>
-                <div className="h-6 w-3/4 bg-border/60 rounded" />
-                <div className="h-4 w-full bg-border/40 rounded" />
-                <div className="h-10 w-full bg-border/30 rounded" />
+                <div className="h-4 w-24 bg-[var(--border-dark)]" />
+                <div className="h-8 w-3/4 bg-[var(--border-dark)]" />
+                <div className="h-16 w-full bg-[var(--border-dark)]/50" />
+                <div className="h-4 w-1/2 bg-[var(--border-dark)]" />
               </div>
             ))}
           </div>
         )}
 
         {changes.isError && (
-          <div className="bg-surface border border-critical/30 rounded-xl p-8 text-center space-y-4">
-            <p className="text-critical text-sm font-medium">
-              Failed to load changes. Is your backend running?
+          <div className="p-12 text-center border border-[var(--critical)] bg-[var(--dim)] space-y-4 max-w-xl mx-auto my-8">
+            <div className="font-['Space_Mono'] text-[12px] text-[var(--critical)] uppercase tracking-widest">
+              SYSTEM ERROR // FAILED TO FETCH SIGNALS
+            </div>
+            <p className="font-['Space_Grotesk'] text-[14px] text-[var(--muted-light)]">
+              Could not connect to ApiRadar backend service. Please verify backend state.
             </p>
             <button
               onClick={() => changes.refetch()}
-              className="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg text-xs font-semibold inline-flex items-center gap-2"
+              className="bg-[var(--cream)] text-[var(--black)] font-['Space_Mono'] text-[11px] font-bold px-5 py-2.5 hover:bg-[var(--red)] hover:text-[var(--white)] transition-colors uppercase"
+              data-cursor="hover"
             >
-              <RefreshCw className="w-4 h-4" />
-              Retry
+              RETRY FETCH
             </button>
           </div>
         )}
 
-        {!changes.isLoading && !changes.isError && visibleItems.length === 0 && (
-          <div className="bg-surface border border-border rounded-xl p-10 text-center space-y-4 my-6">
-            <div className="w-14 h-14 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary mx-auto">
-              <Radio className="w-7 h-7" />
-            </div>
-            <div className="space-y-1 max-w-sm mx-auto">
-              <h3 className="text-base font-semibold text-white">No changes detected yet</h3>
-              <p className="text-xs text-muted">
-                Add APIs to your stack and run the scraper to see changes here
-              </p>
-            </div>
-            <div>
-              <button
-                onClick={() => navigate('/dashboard/stack')}
-                className="px-5 py-2.5 bg-primary hover:bg-primary/90 text-white rounded-lg text-xs font-semibold inline-flex items-center gap-2 shadow-md transition"
-              >
-                <Layers className="w-4 h-4" />
-                Go to My Stack
-              </button>
-            </div>
+        {!changes.isLoading && !changes.isError && sortedItems.length === 0 && (
+          <div className="py-20 text-center flex flex-col items-center justify-center">
+            <h2 className="display-text text-[var(--border-dark)] whitespace-pre-line leading-none mb-6">
+              NO SIGNALS{'\n'}DETECTED
+            </h2>
+            <p className="font-['Space_Grotesk'] text-[14px] font-light text-[var(--muted-light)] mb-8">
+              Add APIs to your stack to begin monitoring.
+            </p>
+            <button
+              onClick={() => navigate('/dashboard/stack')}
+              className="font-['Space_Mono'] text-[12px] font-bold text-[var(--cream)] border-b border-[var(--cream)] pb-1 hover:text-[var(--red)] hover:border-[var(--red)] transition-colors tracking-widest uppercase"
+              data-cursor="hover"
+            >
+              GO TO STACK →
+            </button>
           </div>
         )}
 
-        {!changes.isLoading &&
-          !changes.isError &&
-          visibleItems.length > 0 &&
-          visibleItems.map((item: ChangeEventResponse) => (
-            <ImpactCard
-              key={item.id}
-              change={item}
-              onMarkResolved={() => handleMarkResolved(item.id)}
-            />
-          ))}
+        {!changes.isLoading && !changes.isError && sortedItems.length > 0 && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-[1px] bg-[var(--border-dark)] border border-[var(--border-dark)]">
+            {sortedItems.map((item: ChangeEventResponse, index: number) => (
+              <ImpactCard
+                key={item.id}
+                change={item}
+                index={index}
+                onMarkResolved={() => handleMarkResolved(item.id)}
+              />
+            ))}
+          </div>
+        )}
       </div>
-
-      {/* D. Pagination */}
-      {!changes.isLoading && !changes.isError && totalItems > 0 && (
-        <div className="flex items-center justify-between border-t border-border pt-4">
-          <button
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page <= 1}
-            className="px-4 py-2 bg-surface border border-border rounded-lg text-xs font-medium text-slate-300 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-1"
-          >
-            <ChevronLeft className="w-4 h-4" />
-            Previous
-          </button>
-
-          <span className="text-xs font-medium text-muted">
-            Page {page} of {totalPages}
-          </span>
-
-          <button
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            disabled={page >= totalPages}
-            className="px-4 py-2 bg-surface border border-border rounded-lg text-xs font-medium text-slate-300 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-1"
-          >
-            Next
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
-      )}
     </div>
   )
 }

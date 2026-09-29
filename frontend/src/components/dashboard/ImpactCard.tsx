@@ -1,158 +1,173 @@
 import React, { useState } from 'react'
-import { Clock, CheckCircle2, ChevronDown, ChevronUp, Terminal, Radio } from 'lucide-react'
-import SeverityBadge from './SeverityBadge'
 import DeadlineCountdown from './DeadlineCountdown'
 import { ChangeEventResponse } from '../../hooks/useChanges'
 
 interface ImpactCardProps {
   change: ChangeEventResponse
+  index?: number
   onMarkResolved?: () => void
 }
 
-export default function ImpactCard({ change, onMarkResolved }: ImpactCardProps) {
-  const [showFullMigration, setShowFullMigration] = useState(false)
+export default function ImpactCard({ change, index = 0, onMarkResolved }: ImpactCardProps) {
+  const [isFlipped, setIsFlipped] = useState(false)
 
-  // Format source chip string nicely
+  // Format section index like T-001
+  const formattedIndex = `T-${String(index + 1).padStart(3, '0')}`
+
+  // Format source label
   const formatSource = (src: string) => {
-    if (!src) return 'via Unknown'
+    if (!src) return 'UNKNOWN'
     const lower = src.toLowerCase()
-    if (lower === 'rss') return 'via RSS'
-    if (lower === 'github') return 'via GitHub'
-    if (lower.includes('openapi')) return 'via OpenAPI Diff'
-    return `via ${src}`
+    if (lower === 'rss') return 'RSS'
+    if (lower === 'github') return 'GITHUB'
+    if (lower.includes('openapi')) return 'OPENAPI'
+    return src.toUpperCase()
   }
 
   const affected = change.affected_endpoints || []
-  const hasMigration = Boolean(change.migration_summary)
+  const severityClass = (change.severity || 'INFO').toLowerCase()
 
   return (
-    <div className="bg-[#111118] border border-[#1E1E2E] hover:border-slate-700 rounded-xl p-5 shadow-lg transition-all duration-200 space-y-4">
-      {/* Top row: SeverityBadge on left, API logo + name on right/center, DeadlineCountdown far right */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <SeverityBadge severity={change.severity} />
-
-          {change.api && (
-            <div className="flex items-center gap-2 bg-background/50 border border-border/60 px-2.5 py-1 rounded-lg">
-              {change.api.logo_url ? (
-                <img
-                  src={change.api.logo_url}
-                  alt={change.api.name}
-                  className="w-4 h-4 object-contain bg-white/10 rounded"
-                  onError={(e) => {
-                    ;(e.target as HTMLElement).style.display = 'none'
-                  }}
-                />
-              ) : null}
-              <span className="text-xs font-semibold text-slate-200">
-                {change.api.name}
-              </span>
+    <div className="w-full h-[340px] relative [perspective:1000px] select-none">
+      {/* 3D Flip Container */}
+      <div
+        className={`w-full h-full relative transition-transform duration-600 ease-[cubic-bezier(0.16,1,0.3,1)] [transform-style:preserve-3d] ${
+          isFlipped ? '[transform:rotateY(180deg)]' : ''
+        }`}
+      >
+        {/* FRONT FACE */}
+        <div className="absolute inset-0 [backface-visibility:hidden] flex flex-col justify-between bg-[var(--dim)] border border-[var(--border-dark)] overflow-hidden">
+          {/* Header Strip */}
+          <div className="px-5 py-3 border-b border-[var(--border-dark)] flex items-center justify-between">
+            <span className={`severity-stamp ${severityClass}`}>
+              {change.severity || 'INFO'}
+            </span>
+            <div className="font-['Space_Mono'] text-[10px] text-[var(--muted-dark)] uppercase tracking-wider flex items-center gap-2">
+              <span>{change.api?.name || 'API'}</span>
+              <span>·</span>
+              <span>{change.created_at ? new Date(change.created_at).toLocaleDateString() : 'RECENT'}</span>
             </div>
-          )}
-        </div>
-
-        <DeadlineCountdown deadline_date={change.deadline_date || null} />
-      </div>
-
-      {/* Title */}
-      <h3 className="text-lg font-bold text-white tracking-tight leading-snug">
-        {change.title}
-      </h3>
-
-      {/* What changed section */}
-      {change.what_changed && (
-        <p className="text-sm text-slate-300/90 leading-relaxed">
-          {change.what_changed}
-        </p>
-      )}
-
-      {/* Affected endpoints */}
-      {affected.length > 0 && (
-        <div className="space-y-2 pt-1">
-          <div className="text-[11px] font-semibold text-muted uppercase tracking-wider flex items-center gap-1.5">
-            <Terminal className="w-3.5 h-3.5 text-primary" />
-            Affected Endpoints ({affected.length})
           </div>
-          <div className="flex flex-wrap gap-2">
-            {affected.map((endpoint, idx) => (
-              <code
-                key={idx}
-                className="px-2.5 py-1 bg-background border border-border rounded-md text-xs font-mono text-slate-200 shadow-inner"
-              >
-                {endpoint}
-              </code>
-            ))}
-          </div>
-        </div>
-      )}
 
-      {/* Divider line */}
-      <div className="border-t border-[#1E1E2E] my-3" />
-
-      {/* Bottom section */}
-      <div className="space-y-3">
-        {/* Migration summary with toggle */}
-        {hasMigration && (
-          <div className="bg-background/40 border border-border/50 rounded-lg p-3 space-y-1.5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-200">
-                Migration Guide
-              </span>
-              <button
-                type="button"
-                onClick={() => setShowFullMigration(!showFullMigration)}
-                className="text-xs text-primary hover:underline flex items-center gap-1 font-medium"
-              >
-                {showFullMigration ? (
-                  <>
-                    Show less <ChevronUp className="w-3.5 h-3.5" />
-                  </>
-                ) : (
-                  <>
-                    Show more <ChevronDown className="w-3.5 h-3.5" />
-                  </>
-                )}
-              </button>
+          {/* Main Content */}
+          <div className="p-5 flex-1 flex flex-col justify-start">
+            <div className="font-['Space_Mono'] text-[10px] text-[var(--muted-dark)] tracking-widest uppercase">
+              {formattedIndex}
             </div>
-            <p
-              className={`text-xs text-slate-300 leading-relaxed ${
-                !showFullMigration ? 'line-clamp-2' : ''
-              }`}
-            >
-              {change.migration_summary}
-            </p>
-          </div>
-        )}
 
-        {/* Bottom row chips and actions */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Effort estimate chip */}
-            {change.effort_estimate && (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-background border border-border rounded-md text-xs font-medium text-slate-300">
-                <Clock className="w-3.5 h-3.5 text-primary" />
-                {change.effort_estimate}
-              </span>
+            <h3 className="font-['Space_Grotesk'] text-[20px] font-semibold text-[var(--cream)] leading-snug mt-2 line-clamp-2">
+              {change.title}
+            </h3>
+
+            {change.what_changed && (
+              <p className="font-['Space_Grotesk'] text-[13px] font-light text-[var(--muted-light)] mt-2 line-clamp-2 leading-relaxed">
+                {change.what_changed}
+              </p>
             )}
 
-            {/* Source chip */}
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-background border border-border rounded-md text-xs font-medium text-muted">
-              <Radio className="w-3 h-3 text-slate-400" />
-              {formatSource(change.source)}
-            </span>
+            {/* Affected Endpoints */}
+            {affected.length > 0 && (
+              <div className="mt-4 flex flex-wrap gap-1.5 max-h-[50px] overflow-hidden">
+                {affected.slice(0, 3).map((endpoint, idx) => (
+                  <span
+                    key={idx}
+                    className="font-['Space_Mono'] text-[11px] bg-[var(--black)] border border-[var(--border-dark)] px-2 py-0.5 text-[var(--gold)]"
+                  >
+                    {endpoint}
+                  </span>
+                ))}
+                {affected.length > 3 && (
+                  <span className="font-['Space_Mono'] text-[11px] text-[var(--muted-dark)] px-1 py-0.5">
+                    +{affected.length - 3} MORE
+                  </span>
+                )}
+              </div>
+            )}
           </div>
 
-          {/* Mark Resolved button */}
-          {onMarkResolved && (
+          {/* Footer Strip */}
+          <div className="px-5 py-3 border-t border-[var(--border-dark)] flex items-center justify-between font-['Space_Mono'] text-[10px]">
+            <span className="text-[var(--muted-dark)] tracking-wider">
+              SRC: {formatSource(change.source)}
+            </span>
+
+            <div className="flex items-center gap-3">
+              {change.effort_estimate && (
+                <span className="text-[var(--muted-dark)] tracking-wider">
+                  [{change.effort_estimate.toUpperCase()}]
+                </span>
+              )}
+              <button
+                onClick={() => setIsFlipped(true)}
+                className="text-[var(--gold)] font-bold hover:underline tracking-wider"
+                data-cursor="hover"
+              >
+                FLIP FOR GUIDE →
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* BACK FACE */}
+        <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] flex flex-col justify-between bg-[var(--cream)] text-[var(--black)] border border-[var(--border-light)] overflow-hidden">
+          {/* Header */}
+          <div className="px-5 py-3 border-b border-[var(--border-light)] flex items-center justify-between font-['Space_Mono'] text-[11px] font-bold text-[var(--muted-dark)] uppercase">
+            <span>MIGRATION GUIDE</span>
+            <span>{change.api?.name || 'API'}</span>
+          </div>
+
+          {/* Content */}
+          <div className="p-5 flex-1 overflow-y-auto flex flex-col justify-between">
+            <div>
+              <p className="font-['Space_Grotesk'] text-[15px] font-normal leading-relaxed text-[var(--black)]">
+                {change.migration_summary || 'No explicit migration steps provided for this change.'}
+              </p>
+            </div>
+
+            <div className="mt-4 pt-4 border-t border-[var(--border-light)]/60 flex flex-wrap items-center justify-between gap-2 font-['Space_Mono'] text-[11px]">
+              {change.deadline_date ? (
+                <div className="flex items-center gap-2">
+                  <span className="text-[var(--muted-dark)] font-bold">DEADLINE:</span>
+                  <DeadlineCountdown deadline_date={change.deadline_date} />
+                </div>
+              ) : (
+                <span className="text-[var(--muted-dark)]">NO DEADLINE SPECIFIED</span>
+              )}
+
+              {change.effort_estimate && (
+                <div>
+                  <span className="text-[var(--muted-dark)] font-bold mr-1">EFFORT:</span>
+                  <span className="font-bold uppercase text-[var(--black)]">
+                    {change.effort_estimate}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="px-5 py-3 border-t border-[var(--border-light)] flex items-center justify-between font-['Space_Mono'] text-[10px]">
             <button
-              type="button"
-              onClick={onMarkResolved}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-info/10 hover:bg-info/20 text-info border border-info/30 rounded-lg text-xs font-semibold transition"
+              onClick={() => setIsFlipped(false)}
+              className="text-[var(--muted-dark)] font-bold hover:text-[var(--black)] tracking-wider"
+              data-cursor="hover"
             >
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              Mark Resolved
+              ← FLIP BACK
             </button>
-          )}
+
+            {onMarkResolved && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onMarkResolved()
+                }}
+                className="bg-[var(--black)] text-[var(--cream)] font-['Space_Mono'] text-[10px] font-bold px-3 py-1.5 hover:bg-[var(--red)] hover:text-[var(--white)] transition-colors uppercase"
+                data-cursor="hover"
+              >
+                MARK RESOLVED ✓
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
