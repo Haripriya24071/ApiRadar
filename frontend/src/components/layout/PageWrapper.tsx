@@ -8,14 +8,12 @@ interface PageWrapperProps {
 
 export default function PageWrapper({ children }: PageWrapperProps) {
   return (
-    <div className="h-screen w-screen flex bg-background text-white overflow-hidden">
+    <div className="min-h-screen w-full bg-[var(--black)] text-[var(--cream)] font-['Space_Grotesk']">
       <Sidebar />
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
-        <Navbar />
-        <main className="flex-1 overflow-y-auto p-6 bg-background">
-          {children}
-        </main>
-      </div>
+      <Navbar />
+      <main className="ml-[64px] pt-[52px] min-h-[calc(100vh-52px)]">
+        {children}
+      </main>
     </div>
   )
 }

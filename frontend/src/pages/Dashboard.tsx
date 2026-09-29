@@ -1,67 +1,62 @@
-import React from 'react'
-import { Outlet } from 'react-router-dom'
+import React, { useState } from 'react'
+import { Outlet, useNavigate } from 'react-router-dom'
 import PageWrapper from '../components/layout/PageWrapper'
-import { useStack } from '../hooks/useStack'
 import { useChanges } from '../hooks/useChanges'
-import { Layers, AlertTriangle, Calendar } from 'lucide-react'
+import { X } from 'lucide-react'
 
 export default function Dashboard() {
-  const { stacks } = useStack()
-  const { changes, criticalChanges } = useChanges()
+  const navigate = useNavigate()
+  const { criticalChanges } = useChanges()
+  const [dismissedBanner, setDismissedBanner] = useState(false)
 
-  const userStacks = stacks.data || []
-  const totalWatchedAPIs = userStacks.reduce(
-    (acc, stack) => acc + (stack.watched_apis?.length || 0),
-    0
+  const criticalItems = criticalChanges.data || []
+  const count = criticalItems.length
+
+  // Extract unique API names from critical changes
+  const affectedApis = Array.from(
+    new Set(
+      criticalItems
+        .map((item: any) => item.api?.name || item.api_name || 'API')
+        .filter(Boolean)
+    )
   )
 
-  const criticalCount = criticalChanges.data?.length || 0
+  const apiNamesStr =
+    affectedApis.length > 0 ? affectedApis.join(', ') : 'STRIPE, OPENAI'
 
-  const totalChangesCount = changes.data?.total || 0
+  const showBanner = count > 0 && !dismissedBanner
 
   return (
     <PageWrapper>
-      <div className="space-y-6">
-        {/* Persistent Quick Stats Bar */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="bg-surface border border-border rounded-xl p-4 shadow-sm flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-muted uppercase tracking-wider">
-                Watched APIs
-              </p>
-              <p className="text-2xl font-bold text-white mt-1">{totalWatchedAPIs}</p>
-            </div>
-            <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
-              <Layers className="w-5 h-5" />
-            </div>
+      {/* CRITICAL ALERT BANNER */}
+      {showBanner && (
+        <div className="w-full bg-[var(--red)] text-[var(--white)] px-6 py-2.5 flex items-center justify-between border-b border-[var(--border-dark)] font-['Space_Mono'] text-[11px] font-bold tracking-[0.1em] uppercase">
+          <div
+            onClick={() => navigate('/dashboard/feed?severity=CRITICAL')}
+            className="flex items-center gap-2 cursor-pointer hover:underline flex-1"
+            data-cursor="hover"
+          >
+            <span>⚑</span>
+            <span>
+              {count} CRITICAL CHANGE{count > 1 ? 'S' : ''} DETECTED — {apiNamesStr} — REVIEW NOW →
+            </span>
           </div>
 
-          <div className="bg-surface border border-border rounded-xl p-4 shadow-sm flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-muted uppercase tracking-wider">
-                Critical Alerts
-              </p>
-              <p className="text-2xl font-bold text-critical mt-1">{criticalCount}</p>
-            </div>
-            <div className="w-10 h-10 rounded-lg bg-critical/10 border border-critical/20 flex items-center justify-center text-critical">
-              <AlertTriangle className="w-5 h-5" />
-            </div>
-          </div>
-
-          <div className="bg-surface border border-border rounded-xl p-4 shadow-sm flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-muted uppercase tracking-wider">
-                Total Changes
-              </p>
-              <p className="text-2xl font-bold text-white mt-1">{totalChangesCount}</p>
-            </div>
-            <div className="w-10 h-10 rounded-lg bg-warning/10 border border-warning/20 flex items-center justify-center text-warning">
-              <Calendar className="w-5 h-5" />
-            </div>
-          </div>
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              setDismissedBanner(true)
+            }}
+            className="p-1 hover:opacity-80 transition-opacity ml-4"
+            data-cursor="hover"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
+      )}
 
-        {/* Dashboard sub-page route outlet */}
+      {/* Main Dashboard Sub-routes Outlet */}
+      <div className="p-6 md:p-8">
         <Outlet />
       </div>
     </PageWrapper>
