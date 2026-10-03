@@ -49,16 +49,14 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
 
-          {/* Protected Dashboard Routes */}
-          <Route path="/dashboard" element={<ProtectedRoute />}>
-            <Route element={<Dashboard />}>
-              <Route index element={<Navigate to="/dashboard/feed" replace />} />
-              <Route path="feed" element={<Feed />} />
-              <Route path="stack" element={<MyStack />} />
-              <Route path="apis" element={<BrowseAPIs />} />
-              <Route path="apis/:slug" element={<APIDetail />} />
-              <Route path="settings" element={<Settings />} />
-            </Route>
+          {/* Dashboard Routes (Open to all, optional sign-in) */}
+          <Route path="/dashboard" element={<Dashboard />}>
+            <Route index element={<Navigate to="/dashboard/feed" replace />} />
+            <Route path="feed" element={<Feed />} />
+            <Route path="stack" element={<MyStack />} />
+            <Route path="apis" element={<BrowseAPIs />} />
+            <Route path="apis/:slug" element={<APIDetail />} />
+            <Route path="settings" element={<Settings />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

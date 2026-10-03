@@ -13,7 +13,7 @@ from models.stack_profile import StackProfile, WatchedAPI
 from models.change_event import ChangeEvent
 from models.api_catalog import APICatalog
 from models.resolved_change import UserResolvedChange
-from dependencies import get_current_user
+from dependencies import get_current_user, get_optional_user
 
 router = APIRouter(prefix="/changes", tags=["changes"])
 
@@ -57,13 +57,14 @@ async def get_changes(
     api_slug: Optional[str] = Query(None),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
-    current_user: User = Depends(get_current_user),
+    current_user: Optional[User] = Depends(get_optional_user),
     db: AsyncSession = Depends(get_db)
 ):
-    # Fetch all resolved change IDs for the current user
-    stmt_resolved = select(UserResolvedChange.change_event_id).where(UserResolvedChange.user_id == current_user.id)
-    res_resolved = await db.execute(stmt_resolved)
-    resolved_ids = list(res_resolved.scalars().all())
+    resolved_ids = []
+    if current_user:
+        stmt_resolved = select(UserResolvedChange.change_event_id).where(UserResolvedChange.user_id == current_user.id)
+        res_resolved = await db.execute(stmt_resolved)
+        resolved_ids = list(res_resolved.scalars().all())
 
     if api_slug:
         query = (
@@ -72,7 +73,7 @@ async def get_changes(
             .where(APICatalog.slug == api_slug)
             .options(selectinload(ChangeEvent.api))
         )
-    else:
+    elif current_user:
         stmt_watched = (
             select(WatchedAPI.api_id)
             .join(StackProfile, WatchedAPI.profile_id == StackProfile.id)
@@ -81,14 +82,18 @@ async def get_changes(
         res_watched = await db.execute(stmt_watched)
         watched_api_ids = list(res_watched.scalars().all())
 
-        if not watched_api_ids:
-            return PaginatedChangesResponse(items=[], total=0, page=page, page_size=page_size)
-
-        query = (
-            select(ChangeEvent)
-            .where(ChangeEvent.api_id.in_(watched_api_ids))
-            .options(selectinload(ChangeEvent.api))
-        )
+        if watched_api_ids:
+            query = (
+                select(ChangeEvent)
+                .where(ChangeEvent.api_id.in_(watched_api_ids))
+                .options(selectinload(ChangeEvent.api))
+            )
+        else:
+            # User has not added watched APIs yet, show global feed
+            query = select(ChangeEvent).options(selectinload(ChangeEvent.api))
+    else:
+        # Guest / unauthenticated user: show all breaking change events
+        query = select(ChangeEvent).options(selectinload(ChangeEvent.api))
 
     # Exclude soft-resolved change events
     if resolved_ids:
@@ -123,32 +128,44 @@ async def get_changes(
 
 @router.get("/critical", response_model=List[ChangeEventResponse])
 async def get_critical_changes(
-    current_user: User = Depends(get_current_user),
+    current_user: Optional[User] = Depends(get_optional_user),
     db: AsyncSession = Depends(get_db)
 ):
-    stmt_resolved = select(UserResolvedChange.change_event_id).where(UserResolvedChange.user_id == current_user.id)
-    res_resolved = await db.execute(stmt_resolved)
-    resolved_ids = list(res_resolved.scalars().all())
+    resolved_ids = []
+    if current_user:
+        stmt_resolved = select(UserResolvedChange.change_event_id).where(UserResolvedChange.user_id == current_user.id)
+        res_resolved = await db.execute(stmt_resolved)
+        resolved_ids = list(res_resolved.scalars().all())
 
-    stmt_watched = (
-        select(WatchedAPI.api_id)
-        .join(StackProfile, WatchedAPI.profile_id == StackProfile.id)
-        .where(StackProfile.user_id == current_user.id)
-    )
-    res_watched = await db.execute(stmt_watched)
-    watched_api_ids = list(res_watched.scalars().all())
-
-    if not watched_api_ids:
-        return []
-
-    stmt = (
-        select(ChangeEvent)
-        .where(
-            ChangeEvent.api_id.in_(watched_api_ids),
-            ChangeEvent.severity == "CRITICAL"
+        stmt_watched = (
+            select(WatchedAPI.api_id)
+            .join(StackProfile, WatchedAPI.profile_id == StackProfile.id)
+            .where(StackProfile.user_id == current_user.id)
         )
-        .options(selectinload(ChangeEvent.api))
-    )
+        res_watched = await db.execute(stmt_watched)
+        watched_api_ids = list(res_watched.scalars().all())
+
+        if watched_api_ids:
+            stmt = (
+                select(ChangeEvent)
+                .where(
+                    ChangeEvent.api_id.in_(watched_api_ids),
+                    ChangeEvent.severity == "CRITICAL"
+                )
+                .options(selectinload(ChangeEvent.api))
+            )
+        else:
+            stmt = (
+                select(ChangeEvent)
+                .where(ChangeEvent.severity == "CRITICAL")
+                .options(selectinload(ChangeEvent.api))
+            )
+    else:
+        stmt = (
+            select(ChangeEvent)
+            .where(ChangeEvent.severity == "CRITICAL")
+            .options(selectinload(ChangeEvent.api))
+        )
 
     if resolved_ids:
         stmt = stmt.where(ChangeEvent.id.not_in(resolved_ids))
@@ -160,7 +177,7 @@ async def get_critical_changes(
 @router.get("/{change_id}", response_model=ChangeEventResponse)
 async def get_change_by_id(
     change_id: uuid.UUID,
-    current_user: User = Depends(get_current_user),
+    current_user: Optional[User] = Depends(get_optional_user),
     db: AsyncSession = Depends(get_db)
 ):
     stmt = (
