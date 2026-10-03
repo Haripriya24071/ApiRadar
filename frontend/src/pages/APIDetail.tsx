@@ -108,100 +108,99 @@ export default function APIDetail() {
   })
 
   let statusBadge = {
-    label: '🟢 No critical changes',
-    style: 'bg-info/10 text-info border-info/30',
+    label: 'NO CRITICAL CHANGES',
+    className: 'severity-stamp info',
   }
 
   if (hasCriticalRecent) {
     statusBadge = {
-      label: '🔴 Critical changes detected',
-      style: 'bg-critical/10 text-critical border-critical/30',
+      label: 'CRITICAL CHANGES DETECTED',
+      className: 'severity-stamp critical',
     }
   } else if (hasWarningRecent) {
     statusBadge = {
-      label: '🟡 Warning — changes pending',
-      style: 'bg-warning/10 text-warning border-warning/30',
+      label: 'WARNING: CHANGES PENDING',
+      className: 'severity-stamp warning',
     }
   }
 
   const severityTabs = [
-    { label: 'All', value: null },
-    { label: '🔴 Critical', value: 'CRITICAL' },
-    { label: '🟡 Warning', value: 'WARNING' },
-    { label: '🟢 Info', value: 'INFO' },
+    { label: 'ALL', value: null },
+    { label: 'CRITICAL', value: 'CRITICAL' },
+    { label: 'WARNING', value: 'WARNING' },
+    { label: 'INFO', value: 'INFO' },
   ]
 
   if (apiQuery.isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[350px] space-y-3">
-        <Loader2 className="w-8 h-8 text-primary animate-spin" />
-        <p className="text-sm text-muted">Loading API details...</p>
+      <div className="flex flex-col items-center justify-center min-h-[350px] space-y-3 font-['Space_Mono'] text-xs text-[var(--muted-dark)] uppercase">
+        <Loader2 className="w-8 h-8 text-[var(--cream)] animate-spin" />
+        <p>LOADING API DETAILS...</p>
       </div>
     )
   }
 
   if (apiQuery.isError || !apiDetail) {
     return (
-      <div className="bg-surface border border-critical/30 rounded-xl p-8 text-center space-y-4 max-w-xl mx-auto my-8">
-        <AlertCircle className="w-8 h-8 text-critical mx-auto" />
-        <p className="text-slate-200 text-sm font-semibold">
-          API not found in catalog
+      <div className="bg-[var(--dim)] border border-[var(--critical)] p-8 text-center space-y-4 max-w-xl mx-auto my-8">
+        <AlertCircle className="w-8 h-8 text-[var(--critical)] mx-auto" />
+        <p className="font-['Space_Mono'] text-[var(--critical)] text-xs font-bold uppercase tracking-wider">
+          API NOT FOUND IN CATALOG
         </p>
         <Link
           to="/dashboard/apis"
-          className="px-4 py-2 bg-primary text-white rounded-lg text-xs font-semibold inline-flex items-center gap-2"
+          className="px-4 py-2 bg-[var(--cream)] text-[var(--black)] text-xs font-['Space_Mono'] font-bold inline-flex items-center gap-2 uppercase tracking-wider hover:bg-[var(--red)] hover:text-white transition"
+          data-cursor="hover"
         >
-          <ArrowLeft className="w-4 h-4" /> Back to Browse APIs
+          <ArrowLeft className="w-4 h-4" /> BACK TO BROWSE APIS
         </Link>
       </div>
     )
   }
 
   return (
-    <div className="max-w-6xl space-y-8">
+    <div className="max-w-6xl space-y-8 font-['Space_Grotesk'] text-[var(--cream)] pb-12">
       {/* Back Link */}
       <Link
         to="/dashboard/apis"
-        className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted hover:text-white transition"
+        className="inline-flex items-center gap-2 font-['Space_Mono'] text-xs font-bold text-[var(--muted-light)] hover:text-[var(--cream)] transition uppercase tracking-wider"
+        data-cursor="hover"
       >
-        <ArrowLeft className="w-4 h-4" /> Back to Catalog
+        <ArrowLeft className="w-4 h-4" /> BACK TO CATALOG
       </Link>
 
       {/* A. API Header Section */}
-      <div className="bg-surface border border-border rounded-xl p-6 shadow-lg space-y-6">
+      <div className="bg-[var(--dim)] border border-[var(--border-dark)] p-8 space-y-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-6">
             {apiDetail.logo_url && !logoFailed ? (
               <img
                 src={apiDetail.logo_url}
                 alt={apiDetail.name}
-                className="w-14 h-14 rounded-xl object-contain bg-white/5 p-2 border border-border shrink-0"
+                className="w-16 h-16 object-contain bg-[var(--black)] p-2.5 border border-[var(--border-dark)] shrink-0"
                 onError={() => setLogoFailed(true)}
               />
             ) : (
-              <div className="w-14 h-14 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold text-xl shrink-0">
+              <div className="w-16 h-16 bg-[var(--black)] border border-[var(--border-dark)] flex items-center justify-center font-['Space_Mono'] text-[var(--cream)] font-bold text-xl shrink-0">
                 {apiDetail.name.substring(0, 2).toUpperCase()}
               </div>
             )}
 
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <div className="flex flex-wrap items-center gap-3">
-                <h1 className="text-2xl font-bold text-white tracking-tight">
+                <h1 className="text-3xl font-bold text-[var(--cream)] tracking-tight">
                   {apiDetail.name}
                 </h1>
                 {apiDetail.category && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-xs font-semibold bg-border text-slate-300">
-                    <Tag className="w-3 h-3" />
+                  <span className="font-['Space_Mono'] text-[10px] uppercase border border-[var(--border-dark)] px-2 py-0.5 text-[var(--muted-light)] tracking-widest">
                     {apiDetail.category}
                   </span>
                 )}
               </div>
 
               {/* Status Badge */}
-              <div className="pt-0.5">
-                <span
-                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border ${statusBadge.style}`}
-                >
+              <div className="pt-1">
+                <span className={statusBadge.className}>
                   {statusBadge.label}
                 </span>
               </div>
@@ -209,25 +208,26 @@ export default function APIDetail() {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 font-['Space_Mono'] text-xs">
             <button
               onClick={handleToggleWatch}
               disabled={watchAPI.isPending || unwatchAPI.isPending}
-              className={`px-4 py-2.5 rounded-lg text-xs font-semibold shadow-md transition flex items-center gap-2 ${
+              className={`px-5 py-3 font-bold uppercase tracking-wider transition flex items-center gap-2 ${
                 isWatched
-                  ? 'bg-info/10 hover:bg-info/20 text-info border border-info/30'
-                  : 'bg-primary hover:bg-primary/90 text-white'
+                  ? 'bg-[var(--black)] text-[var(--cream)] border border-[var(--border-dark)] hover:border-[var(--red)]'
+                  : 'bg-[var(--cream)] hover:bg-[var(--red)] text-[var(--black)] hover:text-white'
               }`}
+              data-cursor="hover"
             >
               {watchAPI.isPending || unwatchAPI.isPending ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : isWatched ? (
                 <>
-                  <Check className="w-4 h-4" /> Watched in Stack
+                  <Check className="w-4 h-4" /> WATCHED IN STACK
                 </>
               ) : (
                 <>
-                  <Plus className="w-4 h-4" /> + Watch API
+                  <Plus className="w-4 h-4" /> + WATCH API
                 </>
               )}
             </button>
@@ -237,9 +237,10 @@ export default function APIDetail() {
                 href={apiDetail.changelog_url}
                 target="_blank"
                 rel="noreferrer"
-                className="px-4 py-2.5 bg-background border border-border hover:border-slate-700 text-slate-200 hover:text-white rounded-lg text-xs font-semibold transition flex items-center gap-2"
+                className="px-5 py-3 bg-[var(--black)] border border-[var(--border-dark)] text-[var(--cream)] hover:border-[var(--cream)] text-xs font-bold uppercase tracking-wider transition flex items-center gap-2"
+                data-cursor="hover"
               >
-                View Changelog <ExternalLink className="w-3.5 h-3.5" />
+                CHANGELOG <ExternalLink className="w-3.5 h-3.5" />
               </a>
             )}
           </div>
@@ -249,22 +250,23 @@ export default function APIDetail() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* B. Recent Changes Section */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <h2 className="text-xl font-bold text-white tracking-tight">
-              Recent Changes
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--border-dark)] pb-4">
+            <h2 className="text-2xl font-bold text-[var(--cream)] tracking-tight">
+              Recent Signals
             </h2>
 
             {/* Severity Filter Tabs */}
-            <div className="flex items-center gap-2 bg-surface p-1 border border-border rounded-lg">
+            <div className="flex items-center gap-4 font-['Space_Mono'] text-xs">
               {severityTabs.map((tab) => (
                 <button
                   key={tab.label}
                   onClick={() => setActiveSeverity(tab.value)}
-                  className={`px-2.5 py-1 rounded text-xs font-semibold transition ${
+                  className={`pb-1 transition-colors uppercase tracking-wider ${
                     activeSeverity === tab.value
-                      ? 'bg-primary text-white'
-                      : 'text-muted hover:text-slate-200'
+                      ? 'text-[var(--cream)] font-bold border-b-2 border-[var(--cream)]'
+                      : 'text-[var(--muted-dark)] hover:text-[var(--cream)]'
                   }`}
+                  data-cursor="hover"
                 >
                   {tab.label}
                 </button>
@@ -277,21 +279,21 @@ export default function APIDetail() {
               {[1, 2].map((i) => (
                 <div
                   key={i}
-                  className="bg-surface/50 border border-border rounded-xl p-6 space-y-3 animate-pulse"
+                  className="bg-[var(--dim)] border border-[var(--border-dark)] p-6 space-y-3 animate-pulse"
                 >
-                  <div className="h-5 w-1/3 bg-border/60 rounded" />
-                  <div className="h-4 w-full bg-border/40 rounded" />
+                  <div className="h-5 w-1/3 bg-[var(--border-dark)]" />
+                  <div className="h-4 w-full bg-[var(--border-dark)]/50" />
                 </div>
               ))}
             </div>
           ) : allChanges.length === 0 ? (
-            <div className="bg-surface border border-border rounded-xl p-8 text-center text-muted text-sm">
-              No change events logged for this API.
+            <div className="bg-[var(--dim)] border border-[var(--border-dark)] p-12 text-center text-[var(--muted-light)] font-['Space_Mono'] text-xs uppercase tracking-wider">
+              NO CHANGE EVENTS LOGGED FOR THIS API
             </div>
           ) : (
             <div className="space-y-4">
-              {allChanges.map((change: ChangeEventResponse) => (
-                <ImpactCard key={change.id} change={change} />
+              {allChanges.map((change: ChangeEventResponse, idx: number) => (
+                <ImpactCard key={change.id} change={change} index={idx} />
               ))}
 
               {changesQuery.data?.total &&
@@ -299,9 +301,10 @@ export default function APIDetail() {
                   <div className="pt-2 text-center">
                     <button
                       onClick={() => setPageSize((prev) => prev + 10)}
-                      className="px-5 py-2.5 bg-surface border border-border hover:border-slate-700 text-slate-200 text-xs font-semibold rounded-lg transition"
+                      className="px-6 py-3 bg-[var(--cream)] text-[var(--black)] hover:bg-[var(--red)] hover:text-white font-['Space_Mono'] text-xs font-bold uppercase tracking-wider transition"
+                      data-cursor="hover"
                     >
-                      Load More Changes
+                      LOAD MORE SIGNALS
                     </button>
                   </div>
                 )}
@@ -311,25 +314,24 @@ export default function APIDetail() {
 
         {/* C. API Info Sidebar */}
         <div className="space-y-6">
-          <div className="bg-surface border border-border rounded-xl p-6 shadow-md space-y-4">
-            <h3 className="text-sm font-bold text-white uppercase tracking-wider border-b border-border pb-3 flex items-center gap-2">
-              <Info className="w-4 h-4 text-primary" /> API Overview
+          <div className="bg-[var(--dim)] border border-[var(--border-dark)] p-6 space-y-6">
+            <h3 className="font-['Space_Mono'] text-xs font-bold text-[var(--cream)] uppercase tracking-widest border-b border-[var(--border-dark)] pb-3 flex items-center gap-2">
+              <Info className="w-4 h-4 text-[var(--gold)]" /> API OVERVIEW
             </h3>
 
-            <div className="space-y-4 text-xs">
+            <div className="space-y-5 text-xs font-['Space_Mono']">
               {/* Category */}
               <div>
-                <span className="text-muted block font-medium mb-1">Category</span>
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-background text-slate-200 font-semibold border border-border">
-                  <Tag className="w-3 h-3 text-primary" />
-                  {apiDetail.category || 'General'}
+                <span className="text-[var(--muted-dark)] block uppercase mb-1">Category</span>
+                <span className="text-[var(--cream)] font-semibold">
+                  {apiDetail.category || 'GENERAL'}
                 </span>
               </div>
 
               {/* GitHub Repo Link */}
               {apiDetail.github_repo && (
                 <div>
-                  <span className="text-muted block font-medium mb-1">GitHub Repository</span>
+                  <span className="text-[var(--muted-dark)] block uppercase mb-1">GitHub Repository</span>
                   <a
                     href={
                       apiDetail.github_repo.startsWith('http')
@@ -338,7 +340,8 @@ export default function APIDetail() {
                     }
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 text-primary hover:underline font-semibold"
+                    className="inline-flex items-center gap-1.5 text-[var(--gold)] hover:underline font-bold"
+                    data-cursor="hover"
                   >
                     <Github className="w-3.5 h-3.5" />
                     {apiDetail.github_repo}
@@ -350,15 +353,16 @@ export default function APIDetail() {
               {/* OpenAPI Spec Link */}
               {apiDetail.openapi_spec_url && (
                 <div>
-                  <span className="text-muted block font-medium mb-1">OpenAPI Specification</span>
+                  <span className="text-[var(--muted-dark)] block uppercase mb-1">OpenAPI Specification</span>
                   <a
                     href={apiDetail.openapi_spec_url}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 text-primary hover:underline font-semibold"
+                    className="inline-flex items-center gap-1.5 text-[var(--gold)] hover:underline font-bold"
+                    data-cursor="hover"
                   >
                     <FileCode className="w-3.5 h-3.5" />
-                    View OpenAPI Spec
+                    VIEW OPENAPI SPEC
                     <ExternalLink className="w-3 h-3" />
                   </a>
                 </div>
@@ -366,30 +370,22 @@ export default function APIDetail() {
 
               {/* First Added to ApiRadar Date */}
               <div>
-                <span className="text-muted block font-medium mb-1">First Added</span>
-                <span className="text-slate-200 font-medium flex items-center gap-1.5">
-                  <Calendar className="w-3.5 h-3.5 text-muted" />
+                <span className="text-[var(--muted-dark)] block uppercase mb-1">First Monitored</span>
+                <span className="text-[var(--cream)] flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5 text-[var(--muted-dark)]" />
                   {apiDetail.created_at
-                    ? new Date(apiDetail.created_at).toLocaleDateString(undefined, {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric',
-                      })
-                    : 'Recently'}
+                    ? new Date(apiDetail.created_at).toLocaleDateString()
+                    : 'RECENTLY'}
                 </span>
               </div>
 
               {/* Last Scraped */}
               {apiDetail.last_scraped_at && (
                 <div>
-                  <span className="text-muted block font-medium mb-1">Last Checked</span>
-                  <span className="text-slate-200 font-medium flex items-center gap-1.5">
-                    <Clock className="w-3.5 h-3.5 text-muted" />
-                    {new Date(apiDetail.last_scraped_at).toLocaleDateString(undefined, {
-                      year: 'numeric',
-                      month: 'short',
-                      day: 'numeric',
-                    })}
+                  <span className="text-[var(--muted-dark)] block uppercase mb-1">Last Checked</span>
+                  <span className="text-[var(--cream)] flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-[var(--muted-dark)]" />
+                    {new Date(apiDetail.last_scraped_at).toLocaleDateString()}
                   </span>
                 </div>
               )}

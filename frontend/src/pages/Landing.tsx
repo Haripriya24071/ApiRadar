@@ -28,7 +28,7 @@ export default function Landing() {
           }
         })
       },
-      { threshold: 0.15 }
+      { threshold: 0.05, rootMargin: '0px 0px -50px 0px' }
     )
 
     sectionRefs.current.forEach((sec) => {
@@ -95,31 +95,34 @@ export default function Landing() {
     <div className="min-h-screen bg-[var(--black)] text-[var(--cream)] font-['Space_Grotesk'] selection:bg-[var(--red)] selection:text-[var(--white)]">
       {/* FIXED NAVBAR */}
       <header
-        className={`fixed top-0 left-0 right-0 h-[56px] z-[100] transition-all duration-300 px-6 md:px-12 flex items-center justify-between ${
+        className={`fixed top-0 left-0 right-0 h-[64px] z-[100] transition-all duration-300 px-8 md:px-16 flex items-center justify-between ${
           scrolled
-            ? 'bg-[var(--black)] border-b border-[var(--border-dark)]'
-            : 'bg-transparent'
+            ? 'bg-[var(--black)]/95 backdrop-blur-md border-b border-[var(--border-dark)]'
+            : 'bg-[var(--black)]/60 backdrop-blur-sm border-b border-[var(--border-dark)]/40'
         }`}
+        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
       >
+        {/* Left Corner Logo */}
         <Link
           to="/"
-          className="font-['Space_Mono'] text-[13px] tracking-[0.15em] text-[var(--cream)] hover:text-[var(--red)] transition-colors"
+          className="font-['Space_Mono'] text-[14px] font-bold tracking-[0.2em] text-[var(--cream)] hover:text-[var(--red)] transition-colors select-none"
           data-cursor="hover"
         >
           APIRADAR©
         </Link>
 
-        <div className="flex items-center gap-6">
+        {/* Right Corner Action Row */}
+        <div className="flex items-center gap-6" style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
           <Link
             to="/login"
-            className="font-['Space_Mono'] text-[11px] tracking-[0.1em] text-[var(--cream)] hover:text-[var(--red)] transition-colors uppercase"
+            className="font-['Space_Mono'] text-[11px] font-bold tracking-[0.15em] text-[var(--cream)] hover:text-[var(--red)] transition-colors uppercase"
             data-cursor="hover"
           >
             LOGIN
           </Link>
           <button
             onClick={() => navigate('/register')}
-            className="bg-[var(--cream)] text-[var(--black)] font-['Space_Mono'] text-[11px] font-bold tracking-[0.1em] px-4 py-2 hover:bg-[var(--red)] hover:text-[var(--white)] transition-colors"
+            className="bg-[var(--cream)] text-[var(--black)] font-['Space_Mono'] text-[11px] font-bold tracking-[0.12em] px-5 py-2.5 hover:bg-[var(--red)] hover:text-[var(--white)] transition-all uppercase select-none cursor-pointer"
             data-cursor="hover"
           >
             MONITOR NOW →
@@ -129,8 +132,7 @@ export default function Landing() {
 
       {/* SECTION 1 — HERO */}
       <section
-        ref={(el) => (sectionRefs.current[0] = el)}
-        className="min-h-screen w-full flex flex-col justify-between pt-[15vh] pb-12 px-6 md:px-16 section-dark opacity-0"
+        className="min-h-screen w-full flex flex-col justify-between pt-[15vh] pb-12 px-6 md:px-16 section-dark animate-fade-up"
       >
         <div className="max-w-6xl mx-auto w-full flex flex-col items-center text-center">
           {/* Section Label */}
@@ -205,7 +207,7 @@ export default function Landing() {
       {/* SECTION 2 — THE PROBLEM */}
       <section
         ref={(el) => (sectionRefs.current[1] = el)}
-        className="py-24 px-6 md:px-16 section-light relative overflow-hidden opacity-0"
+        className="py-24 px-6 md:px-16 section-light relative overflow-hidden"
       >
         <div className="max-w-6xl mx-auto relative">
           <div className="editorial-label mb-12">00_2 // THE PROBLEM</div>
@@ -249,7 +251,7 @@ export default function Landing() {
       {/* SECTION 3 — HOW IT WORKS */}
       <section
         ref={(el) => (sectionRefs.current[2] = el)}
-        className="py-24 px-6 md:px-16 section-dark border-t border-[var(--border-dark)] opacity-0"
+        className="py-24 px-6 md:px-16 section-dark border-t border-[var(--border-dark)]"
       >
         <div className="max-w-6xl mx-auto">
           <div className="editorial-label mb-16">00_3 // MECHANISM</div>
@@ -287,7 +289,7 @@ export default function Landing() {
       {/* SECTION 4 — APIS */}
       <section
         ref={(el) => (sectionRefs.current[3] = el)}
-        className="py-24 px-6 md:px-16 section-light border-t border-[var(--border-light)] opacity-0"
+        className="py-24 px-6 md:px-16 section-light border-t border-[var(--border-light)]"
       >
         <div className="max-w-6xl mx-auto">
           <div className="editorial-label mb-12">00_4 // STACK</div>
@@ -325,7 +327,7 @@ export default function Landing() {
       {/* SECTION 5 — FINAL CTA */}
       <section
         ref={(el) => (sectionRefs.current[4] = el)}
-        className="py-28 px-6 md:px-16 section-dark border-t border-[var(--border-dark)] relative opacity-0"
+        className="py-28 px-6 md:px-16 section-dark border-t border-[var(--border-dark)] relative"
       >
         <div className="max-w-4xl mx-auto text-center flex flex-col items-center">
           <h2 className="display-text text-[var(--cream)] mb-4">READY?</h2>

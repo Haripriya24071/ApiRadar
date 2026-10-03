@@ -176,10 +176,25 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* User Avatar (32px Sharp Square) */}
-          <div className="w-8 h-8 bg-[var(--dim)] border border-[var(--border-dark)] flex items-center justify-center font-['Space_Mono'] text-[13px] font-bold text-[var(--cream)] select-none">
-            {user?.email ? user.email[0].toUpperCase() : 'A'}
-          </div>
+          {/* User Avatar / Sign In Link */}
+          {user ? (
+            <div
+              onClick={() => navigate('/dashboard/settings')}
+              className="w-8 h-8 bg-[var(--dim)] border border-[var(--border-dark)] flex items-center justify-center font-['Space_Mono'] text-[13px] font-bold text-[var(--cream)] hover:border-[var(--red)] select-none cursor-pointer transition"
+              title={user.email}
+              data-cursor="hover"
+            >
+              {user.email[0].toUpperCase()}
+            </div>
+          ) : (
+            <button
+              onClick={() => navigate('/login')}
+              className="bg-[var(--cream)] text-[var(--black)] font-['Space_Mono'] text-[10px] font-bold px-3 py-1.5 hover:bg-[var(--red)] hover:text-white transition uppercase tracking-wider select-none cursor-pointer"
+              data-cursor="hover"
+            >
+              SIGN IN
+            </button>
+          )}
         </div>
       </header>
 

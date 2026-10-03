@@ -33,55 +33,71 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
-      <div className="max-w-md w-full bg-surface border border-border rounded-xl p-8 shadow-xl">
-        <h2 className="text-2xl font-bold text-center text-white mb-2">Welcome Back</h2>
-        <p className="text-sm text-muted text-center mb-6">Sign in to your ApiRadar account</p>
+    <div className="min-h-screen flex items-center justify-center bg-[var(--black)] text-[var(--cream)] px-4 font-['Space_Grotesk']">
+      <div className="max-w-md w-full bg-[var(--dim)] border border-[var(--border-dark)] p-8 md:p-10 shadow-2xl relative">
+        <div className="editorial-label mb-4 text-center">00_0 // AUTHENTICATION</div>
+        <h2 className="text-3xl font-bold text-center text-[var(--cream)] tracking-tight mb-2">
+          Welcome Back
+        </h2>
+        <p className="text-xs font-['Space_Mono'] text-[var(--muted-light)] text-center mb-8 uppercase tracking-widest">
+          Sign in to your ApiRadar terminal
+        </p>
 
         {error && (
-          <div className="mb-4 p-3 bg-critical/10 border border-critical/30 rounded-lg text-critical text-sm text-center font-medium">
+          <div className="mb-6 p-3 bg-[var(--black)] border border-[var(--critical)] text-[var(--critical)] text-xs font-['Space_Mono'] uppercase tracking-wider text-center">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-xs font-medium text-slate-300 mb-1">Email Address</label>
+            <label className="block text-[11px] font-['Space_Mono'] uppercase tracking-wider text-[var(--muted-light)] mb-2">
+              Email Address
+            </label>
             <input
               type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-2.5 bg-background border border-border rounded-lg text-white placeholder-muted focus:outline-none focus:border-primary transition"
-              placeholder="you@example.com"
+              className="w-full px-4 py-3 bg-[var(--black)] border border-[var(--border-dark)] text-[var(--cream)] placeholder-[var(--muted-dark)] font-['Space_Mono'] text-xs focus:outline-none focus:border-[var(--cream)] transition"
+              placeholder="you@domain.com"
+              data-cursor="text"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-300 mb-1">Password</label>
+            <label className="block text-[11px] font-['Space_Mono'] uppercase tracking-wider text-[var(--muted-light)] mb-2">
+              Password
+            </label>
             <input
               type="password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-2.5 bg-background border border-border rounded-lg text-white placeholder-muted focus:outline-none focus:border-primary transition"
+              className="w-full px-4 py-3 bg-[var(--black)] border border-[var(--border-dark)] text-[var(--cream)] placeholder-[var(--muted-dark)] font-['Space_Mono'] text-xs focus:outline-none focus:border-[var(--cream)] transition"
               placeholder="••••••••"
+              data-cursor="text"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2.5 bg-primary hover:bg-primary/90 text-white font-medium rounded-lg transition disabled:opacity-50 flex items-center justify-center"
+            className="w-full py-3.5 bg-[var(--cream)] hover:bg-[var(--red)] text-[var(--black)] hover:text-[var(--white)] font-['Space_Mono'] text-xs font-bold uppercase tracking-widest transition disabled:opacity-50 flex items-center justify-center mt-2"
+            data-cursor="hover"
           >
-            {loading ? 'Signing in...' : 'Sign In'}
+            {loading ? 'AUTHENTICATING...' : 'SIGN IN →'}
           </button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-muted">
-          Don't have an account?{' '}
-          <Link to="/register" className="text-primary hover:underline font-medium">
-            Register here
+        <p className="mt-8 text-center text-xs font-['Space_Mono'] text-[var(--muted-light)]">
+          DON'T HAVE AN ACCOUNT?{' '}
+          <Link
+            to="/register"
+            className="text-[var(--gold)] hover:underline font-bold"
+            data-cursor="hover"
+          >
+            REGISTER HERE
           </Link>
         </p>
       </div>

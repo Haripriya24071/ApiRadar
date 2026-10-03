@@ -1,11 +1,12 @@
 import React, { useState } from 'react'
-import { NavLink } from 'react-router-dom'
-import { Rss, Layers, Globe, Settings as SettingsIcon, LogOut } from 'lucide-react'
+import { NavLink, useNavigate } from 'react-router-dom'
+import { Rss, Layers, Globe, Settings as SettingsIcon, LogOut, LogIn } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 
 export default function Sidebar() {
   const [isHovered, setIsHovered] = useState(false)
-  const { logout } = useAuth()
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
 
   const navItems = [
     { to: '/dashboard/feed', icon: Rss, label: 'FEED' },
@@ -74,21 +75,39 @@ export default function Sidebar() {
           )}
         </div>
 
-        <button
-          onClick={logout}
-          className="h-10 flex items-center px-1 text-[var(--muted-dark)] hover:text-[var(--red)] transition-colors w-full"
-          title="Logout"
-          data-cursor="hover"
-        >
-          <LogOut className="w-5 h-5 shrink-0" />
-          <span
-            className={`font-['Space_Mono'] text-[11px] tracking-[0.15em] ml-4 whitespace-nowrap transition-all duration-200 ${
-              isHovered ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden'
-            }`}
+        {user ? (
+          <button
+            onClick={logout}
+            className="h-10 flex items-center px-1 text-[var(--muted-dark)] hover:text-[var(--red)] transition-colors w-full cursor-pointer"
+            title="Logout"
+            data-cursor="hover"
           >
-            LOGOUT
-          </span>
-        </button>
+            <LogOut className="w-5 h-5 shrink-0" />
+            <span
+              className={`font-['Space_Mono'] text-[11px] tracking-[0.15em] ml-4 whitespace-nowrap transition-all duration-200 ${
+                isHovered ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden'
+              }`}
+            >
+              LOGOUT
+            </span>
+          </button>
+        ) : (
+          <button
+            onClick={() => navigate('/login')}
+            className="h-10 flex items-center px-1 text-[var(--gold)] hover:text-[var(--cream)] transition-colors w-full cursor-pointer"
+            title="Sign In"
+            data-cursor="hover"
+          >
+            <LogIn className="w-5 h-5 shrink-0" />
+            <span
+              className={`font-['Space_Mono'] text-[11px] font-bold tracking-[0.15em] ml-4 whitespace-nowrap transition-all duration-200 ${
+                isHovered ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden'
+              }`}
+            >
+              SIGN IN
+            </span>
+          </button>
+        )}
       </div>
     </aside>
   )
