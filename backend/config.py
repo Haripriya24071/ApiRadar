@@ -1,10 +1,8 @@
-import os
-from typing import List, Union
-from pydantic_settings import BaseSettings
-from pydantic import field_validator
+ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+DEFAULT_DB_PATH = os.path.join(ROOT_DIR, "apiradar.db").replace("\\", "/")
 
 class Settings(BaseSettings):
-    DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/apiradar"
+    DATABASE_URL: str = f"sqlite+aiosqlite:///{DEFAULT_DB_PATH}"
     REDIS_URL: str = "redis://localhost:6379/0"
     SECRET_KEY: str = "your-jwt-secret-key-here"
     OPENAI_API_KEY: str = ""
@@ -20,7 +18,7 @@ class Settings(BaseSettings):
         return v
 
     class Config:
-        env_file = ".env"
+        env_file = (os.path.join(os.path.dirname(__file__), "../.env"), ".env")
         env_file_encoding = "utf-8"
         extra = "ignore"
 

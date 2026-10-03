@@ -1,8 +1,8 @@
 import uuid
 from datetime import datetime, date
 from typing import Optional, List
-from sqlalchemy import String, Text, DateTime, Date, ForeignKey, func
-from sqlalchemy.dialects.postgresql import UUID, ARRAY
+from sqlalchemy import String, Text, DateTime, Date, JSON, ForeignKey, func
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from database import Base
 
@@ -15,7 +15,7 @@ class ChangeEvent(Base):
     severity: Mapped[str] = mapped_column(String(50), nullable=False)
     title: Mapped[str] = mapped_column(String(500), nullable=False)
     what_changed: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    affected_endpoints: Mapped[Optional[List[str]]] = mapped_column(ARRAY(String), nullable=True)
+    affected_endpoints: Mapped[Optional[List[str]]] = mapped_column(JSON, nullable=True)
     deadline_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     migration_summary: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     effort_estimate: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)

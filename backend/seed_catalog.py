@@ -1,6 +1,6 @@
 import asyncio
 from sqlalchemy import select
-from database import SessionLocal
+from database import SessionLocal, init_db
 from models.api_catalog import APICatalog
 from tasks.scraper_tasks import _async_run_all_rss_scrapers, _async_run_all_github_scrapers
 
@@ -68,6 +68,7 @@ INITIAL_APIS = [
 ]
 
 async def seed():
+    await init_db()
     seeded_count = 0
     async with SessionLocal() as db:
         for api_data in INITIAL_APIS:

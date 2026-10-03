@@ -5,6 +5,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from config import settings
+from database import init_db
 from routers import auth, stacks, changes, apis, notifications
 from tasks.scraper_tasks import (
     run_all_scrapers,
@@ -74,6 +75,7 @@ app.include_router(notifications.router, prefix="/api")
 
 @app.on_event("startup")
 async def startup_event():
+    await init_db()
     logger.info("ApiRadar backend started successfully")
 
 @app.get("/ping")
