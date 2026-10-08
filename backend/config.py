@@ -1,3 +1,8 @@
+import os
+from typing import List, Union
+from pydantic import field_validator
+from pydantic_settings import BaseSettings
+
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 DEFAULT_DB_PATH = os.path.join(ROOT_DIR, "apiradar.db").replace("\\", "/")
 
