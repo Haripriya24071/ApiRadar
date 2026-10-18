@@ -6,6 +6,7 @@ from config import settings
 
 class LLMCache:
     def __init__(self):
+        self._disabled = False
         try:
             self.client = redis.Redis.from_url(settings.REDIS_URL, decode_responses=True)
         except Exception as e:
@@ -17,7 +18,7 @@ class LLMCache:
         return f"llm:{sha}"
 
     def get(self, raw_content: str) -> Optional[Any]:
-        if not self.client:
+        if not self.client or self._disabled:
             return None
         try:
             key = self._get_key(raw_content)
@@ -25,14 +26,19 @@ class LLMCache:
             if data:
                 return json.loads(data)
         except Exception as e:
-            print(f"LLMCache get error: {e}")
+            self._disable(e)
         return None
 
     def set(self, raw_content: str, result: Any) -> None:
-        if not self.client:
+        if not self.client or self._disabled:
             return
         try:
             key = self._get_key(raw_content)
             self.client.set(key, json.dumps(result), ex=604800)
         except Exception as e:
-            print(f"LLMCache set error: {e}")
+            self._disable(e)
+
+    def _disable(self, error: Exception) -> None:
+        if not self._disabled:
+            print(f"Redis cache unavailable; continuing without cache: {error}")
+        self._disabled = True
