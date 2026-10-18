@@ -118,14 +118,14 @@ export default function Landing() {
             className="font-['Space_Mono'] text-[11px] font-bold tracking-[0.15em] text-[var(--cream)] hover:text-[var(--red)] transition-colors uppercase"
             data-cursor="hover"
           >
-            LOGIN
+            SIGN IN (OPTIONAL)
           </Link>
           <button
-            onClick={() => navigate('/register')}
+            onClick={() => navigate('/dashboard/stack')}
             className="bg-[var(--cream)] text-[var(--black)] font-['Space_Mono'] text-[11px] font-bold tracking-[0.12em] px-5 py-2.5 hover:bg-[var(--red)] hover:text-[var(--white)] transition-all uppercase select-none cursor-pointer"
             data-cursor="hover"
           >
-            MONITOR NOW →
+            BUILD A WATCHLIST →
           </button>
         </div>
       </header>
@@ -166,11 +166,11 @@ export default function Landing() {
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row items-center gap-4 mt-10">
             <button
-              onClick={() => navigate('/register')}
+              onClick={() => navigate('/dashboard/stack')}
               className="bg-[var(--cream)] text-[var(--black)] font-['Space_Grotesk'] text-[13px] font-medium tracking-[0.05em] px-7 py-3.5 hover:bg-[var(--red)] hover:text-[var(--white)] transition-all uppercase"
               data-cursor="hover"
             >
-              START MONITORING
+              BUILD A WATCHLIST
             </button>
             <button
               onClick={() => navigate('/dashboard/feed')}
@@ -335,11 +335,11 @@ export default function Landing() {
             Set up takes 60 seconds.
           </p>
           <button
-            onClick={() => navigate('/register')}
+            onClick={() => navigate('/dashboard/apis')}
             className="bg-[var(--cream)] text-[var(--black)] font-['Space_Grotesk'] text-[13px] font-medium tracking-[0.05em] px-8 py-4 hover:bg-[var(--red)] hover:text-[var(--white)] transition-all uppercase"
             data-cursor="hover"
           >
-            START MONITORING
+            EXPLORE APIS
           </button>
         </div>
 

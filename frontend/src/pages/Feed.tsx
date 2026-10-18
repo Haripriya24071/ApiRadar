@@ -4,14 +4,24 @@ import { useChanges, ChangeEventResponse } from '../hooks/useChanges'
 import { useToast } from '../store/toastStore'
 import { changesAPI } from '../lib/api'
 import ImpactCard from '../components/dashboard/ImpactCard'
+import { useAuthStore } from '../store/authStore'
+
+const GUEST_RESOLVED_KEY = 'apiradar_guest_resolved_changes'
 
 export default function Feed() {
   const navigate = useNavigate()
   const toast = useToast()
+  const user = useAuthStore((state) => state.user)
   const [activeSeverity, setActiveSeverity] = useState<string | null>(null)
   const [sortBy, setSortBy] = useState<'newest' | 'deadline'>('newest')
   const [page, setPage] = useState<number>(1)
-  const [resolvedIds, setResolvedIds] = useState<Set<string>>(new Set())
+  const [resolvedIds, setResolvedIds] = useState<Set<string>>(() => {
+    try {
+      return new Set(JSON.parse(localStorage.getItem(GUEST_RESOLVED_KEY) || '[]'))
+    } catch {
+      return new Set()
+    }
+  })
 
   const pageSize = 12
 
@@ -27,8 +37,13 @@ export default function Feed() {
   }
 
   const handleMarkResolved = async (id: string) => {
-    setResolvedIds((prev) => new Set(prev).add(id))
-    toast.success('Change event marked as resolved')
+    setResolvedIds((prev) => {
+      const next = new Set(prev).add(id)
+      if (!user) localStorage.setItem(GUEST_RESOLVED_KEY, JSON.stringify([...next]))
+      return next
+    })
+    toast.success(user ? 'Change event marked as resolved' : 'Hidden from this browser')
+    if (!user) return
     try {
       await changesAPI.resolve(id)
     } catch (err) {
@@ -187,14 +202,14 @@ export default function Feed() {
               NO SIGNALS{'\n'}DETECTED
             </h2>
             <p className="font-['Space_Grotesk'] text-[14px] font-light text-[var(--muted-light)] mb-8">
-              Add APIs to your stack to begin monitoring.
+              Browse the global feed or build a watchlist saved in this browser.
             </p>
             <button
-              onClick={() => navigate('/dashboard/stack')}
+              onClick={() => navigate('/dashboard/apis')}
               className="font-['Space_Mono'] text-[12px] font-bold text-[var(--cream)] border-b border-[var(--cream)] pb-1 hover:text-[var(--red)] hover:border-[var(--red)] transition-colors tracking-widest uppercase"
               data-cursor="hover"
             >
-              GO TO STACK →
+              BROWSE APIS →
             </button>
           </div>
         )}

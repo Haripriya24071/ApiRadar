@@ -70,6 +70,7 @@ export default function APIDetail() {
         await watchAPI.mutateAsync({
           stackId: newStack.id,
           apiId: apiDetail.id,
+          api: apiDetail,
         })
         toast.success(`Now watching ${apiDetail.name}`)
         return
@@ -85,6 +86,7 @@ export default function APIDetail() {
         await watchAPI.mutateAsync({
           stackId: currentStack.id,
           apiId: apiDetail.id,
+          api: apiDetail,
         })
         toast.success(`Now watching ${apiDetail.name}`)
       }

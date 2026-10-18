@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
-import { authAPI } from '../lib/api'
+import { authAPI, stacksAPI } from '../lib/api'
+import { clearGuestStackAfterSync, getGuestStackForSync } from './useStack'
 
 export function useAuth() {
   const navigate = useNavigate()
@@ -8,8 +9,28 @@ export function useAuth() {
 
   const login = async (email: string, password: string) => {
     const res = await authAPI.login({ email, password })
-    setAuth(res.user, res.token)
+    setAuth(res.user, res.access_token)
+    await syncGuestStack()
     return res.user
+  }
+
+  const syncGuestStack = async () => {
+    const guestStack = getGuestStackForSync()
+    if (!guestStack?.watched_apis.length) return
+
+    try {
+      const stacks = await stacksAPI.list()
+      const stack = stacks[0] || await stacksAPI.create('My Stack')
+      const existingApiIds = new Set(stack.watched_apis.map((item) => item.api_id))
+      for (const watched of guestStack.watched_apis) {
+        if (!existingApiIds.has(watched.api_id)) {
+          await stacksAPI.watch(stack.id, watched.api_id, watched.sdk_version)
+        }
+      }
+      clearGuestStackAfterSync()
+    } catch {
+      // Keep the browser watchlist if syncing fails; signing in should still work.
+    }
   }
 
   const register = async (email: string, password: string) => {
@@ -19,7 +40,7 @@ export function useAuth() {
 
   const logout = () => {
     clearAuth()
-    navigate('/login')
+    navigate('/dashboard/feed')
   }
 
   return {

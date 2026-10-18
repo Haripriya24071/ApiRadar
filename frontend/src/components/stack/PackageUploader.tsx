@@ -129,6 +129,7 @@ export default function PackageUploader({ stackId, onAPIsAdded }: PackageUploade
             stackId,
             apiId: item.api.id,
             sdkVersion: item.sdk_version,
+            api: item.api,
           })
         )
       )

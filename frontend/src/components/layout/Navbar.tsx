@@ -20,12 +20,13 @@ export default function Navbar() {
     queryKey: ['notifications-count'],
     queryFn: () => notificationsAPI.getCount(),
     refetchInterval: 30000,
+    enabled: Boolean(user),
   })
 
   const { data: notificationsData } = useQuery({
     queryKey: ['notifications-list'],
     queryFn: () => notificationsAPI.list(),
-    enabled: showNotificationsDropdown,
+    enabled: showNotificationsDropdown && Boolean(user),
   })
 
   const markAllReadMutation = useMutation({
@@ -36,7 +37,7 @@ export default function Navbar() {
     },
   })
 
-  const unreadCount = countData?.unread_count || 0
+  const unreadCount = countData?.unread || 0
   const notificationsList = notificationsData?.data || []
 
   // ESC key to close search overlay
@@ -115,7 +116,10 @@ export default function Navbar() {
           {/* Notifications */}
           <div className="relative">
             <button
-              onClick={() => setShowNotificationsDropdown(!showNotificationsDropdown)}
+              onClick={() => user
+                ? setShowNotificationsDropdown(!showNotificationsDropdown)
+                : navigate('/login')}
+              title={user ? 'Notifications' : 'Sign in to enable notifications'}
               className="p-1 text-[var(--muted-dark)] hover:text-[var(--cream)] relative transition-colors"
               data-cursor="hover"
             >
@@ -128,7 +132,7 @@ export default function Navbar() {
             </button>
 
             {/* Notifications Dropdown */}
-            {showNotificationsDropdown && (
+            {user && showNotificationsDropdown && (
               <div className="absolute right-0 mt-3 w-80 bg-[var(--dim)] border border-[var(--border-dark)] shadow-2xl z-50">
                 <div className="p-3 border-b border-[var(--border-dark)] flex items-center justify-between">
                   <span className="font-['Space_Mono'] text-[10px] font-bold text-[var(--cream)] uppercase tracking-wider">
@@ -192,7 +196,7 @@ export default function Navbar() {
               className="bg-[var(--cream)] text-[var(--black)] font-['Space_Mono'] text-[10px] font-bold px-3 py-1.5 hover:bg-[var(--red)] hover:text-white transition uppercase tracking-wider select-none cursor-pointer"
               data-cursor="hover"
             >
-              SIGN IN
+              OPTIONAL SIGN IN
             </button>
           )}
         </div>

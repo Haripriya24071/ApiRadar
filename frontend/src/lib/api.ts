@@ -31,7 +31,7 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response && error.response.status === 401) {
+    if (error.response && error.response.status === 401 && localStorage.getItem('apiradar_token')) {
       localStorage.removeItem('apiradar_token')
       if (
         window.location.pathname !== '/login' &&
@@ -63,9 +63,9 @@ export function getErrorMessage(error: any): string {
 }
 
 export const authAPI = {
-  register: (data: { email: string; password: string }): Promise<{ token: string; user: User }> =>
+  register: (data: { email: string; password: string }): Promise<User> =>
     api.post('/api/auth/register', data).then((res) => res.data),
-  login: (data: { email: string; password: string }): Promise<{ token: string; user: User }> =>
+  login: (data: { email: string; password: string }): Promise<{ access_token: string; token_type: string; user: User }> =>
     api.post('/api/auth/login', data).then((res) => res.data),
   me: (): Promise<User> => api.get('/api/auth/me').then((res) => res.data),
 }
@@ -115,6 +115,6 @@ export const notificationsAPI = {
       unreadCount: parseInt(res.headers['x-unread-count'] || '0', 10),
     })),
   markAllRead: (): Promise<void> => api.patch('/api/notifications/read-all').then((res) => res.data),
-  getCount: (): Promise<{ unread_count: number }> =>
+  getCount: (): Promise<{ unread: number }> =>
     api.get('/api/notifications/count').then((res) => res.data),
 }

@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react'
 import { useStack } from '../hooks/useStack'
 import { apisAPI } from '../lib/api'
 import { useToast } from '../store/toastStore'
+import { useAuthStore } from '../store/authStore'
 
 interface DetectedApiItem {
   id: string
@@ -14,6 +15,7 @@ interface DetectedApiItem {
 
 export default function MyStack() {
   const toast = useToast()
+  const user = useAuthStore((state) => state.user)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { stacks, createStack, watchAPI, unwatchAPI } = useStack()
 
@@ -117,7 +119,12 @@ export default function MyStack() {
     try {
       const stackId = await handleEnsureStack()
       for (const item of selected) {
-        await watchAPI.mutateAsync({ stackId, apiId: item.id, sdkVersion: item.version })
+        await watchAPI.mutateAsync({
+          stackId,
+          apiId: item.id,
+          sdkVersion: item.version,
+          api: item,
+        })
       }
       toast.success(`Added ${selected.length} APIs to your stack!`)
       setDetectedApis([])
@@ -143,6 +150,9 @@ export default function MyStack() {
       {/* HEADER */}
       <div className="pt-8 md:pt-12 px-6 md:px-10 pb-8">
         <div className="editorial-label mb-3">00_2 // MY STACK</div>
+        <div className="font-['Space_Mono'] text-[10px] text-[var(--muted-dark)] tracking-widest uppercase mb-4">
+          {user ? 'ACCOUNT WATCHLIST' : 'GUEST WATCHLIST · SAVED IN THIS BROWSER'}
+        </div>
         <h1 className="font-['Space_Grotesk'] text-[clamp(40px,5vw,80px)] font-bold leading-[0.9] tracking-tight text-[var(--cream)] whitespace-pre-line">
           Your{'\n'}Monitored{'\n'}APIs
         </h1>
