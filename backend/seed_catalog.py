@@ -69,7 +69,7 @@ INITIAL_APIS = [
         "name": "SendGrid",
         "slug": "sendgrid",
         "category": "email",
-        "changelog_url": "https://sendgrid.com/docs/release-notes/",
+        "changelog_url": "https://www.twilio.com/en-us/changelog?product=sendgrid-email-api%2Ctwilio-sendgrid-platform",
         "rss_feed_url": None,
         "github_repo": "sendgrid/sendgrid-python",
         "openapi_spec_url": None,
