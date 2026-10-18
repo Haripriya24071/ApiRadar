@@ -8,6 +8,38 @@ interface ImpactCardProps {
   onMarkResolved?: () => void
 }
 
+function formatReleaseSummary(summary: string) {
+  const lines = summary
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+
+  if (lines[0] && /^v?\d+\.\d+\.\d+(?:[-+][\w.-]+)?\s+\(\d{4}-\d{2}-\d{2}\)$/i.test(lines[0])) {
+    lines.shift()
+  }
+
+  const formatted = lines.map((line) => {
+    const heading = line.replace(/^[#*\s]+|[:*\s]+$/g, '')
+    if (/^(features?|bug fixes?|fixes|breaking changes?|documentation|deprecations?)$/i.test(heading)) {
+      return { text: heading.toUpperCase(), isHeading: true }
+    }
+
+    const text = line
+      .replace(/^[-*+•]\s*/, '')
+      .replace(/\s*\([0-9a-f]{7,}\)?\s*$/i, '')
+      .replace(/\s*\(#\d+\)/g, '')
+      .trim()
+    return { text, isHeading: false }
+  }).filter((line) => line.text)
+
+  const lastLine = formatted[formatted.length - 1]
+  if (lastLine && !lastLine.isHeading && lastLine.text.length < 40 && /\b[a-z]{1,2}$/i.test(lastLine.text) && !/[.!?)]$/.test(lastLine.text)) {
+    formatted.pop()
+  }
+
+  return formatted
+}
+
 export default function ImpactCard({ change, index = 0, onMarkResolved }: ImpactCardProps) {
   const [isFlipped, setIsFlipped] = useState(false)
   const [isSummaryExpanded, setIsSummaryExpanded] = useState(false)
@@ -29,6 +61,7 @@ export default function ImpactCard({ change, index = 0, onMarkResolved }: Impact
 
   const affected = change.affected_endpoints || []
   const severityClass = (change.severity || 'INFO').toLowerCase()
+  const summaryLines = change.what_changed ? formatReleaseSummary(change.what_changed) : []
 
   return (
     <div className="w-full h-[340px] relative [perspective:1000px] select-none">
@@ -62,13 +95,20 @@ export default function ImpactCard({ change, index = 0, onMarkResolved }: Impact
               {change.title}
             </h3>
 
-            {change.what_changed && (
-              <p className={`font-['Space_Grotesk'] text-[14px] font-light text-[var(--muted-light)] mt-2 leading-relaxed ${isSummaryExpanded ? 'whitespace-pre-line' : 'line-clamp-4'}`}>
-                {change.what_changed}
-              </p>
+            {summaryLines.length > 0 && (
+              <div className={`font-['Space_Grotesk'] text-[14px] font-light text-[var(--muted-light)] mt-2 leading-relaxed ${isSummaryExpanded ? '' : 'line-clamp-4'}`}>
+                {summaryLines.map((line, lineIndex) => (
+                  <span
+                    key={lineIndex}
+                    className={`block whitespace-pre-line ${line.isHeading ? 'mt-2 first:mt-0 font-medium text-[var(--cream)] text-[11px] tracking-wider' : 'pl-2'}`}
+                  >
+                    {line.isHeading ? line.text : `• ${line.text}`}
+                  </span>
+                ))}
+              </div>
             )}
 
-            {Boolean(change.what_changed && change.what_changed.length > 240) && (
+            {summaryLines.length > 4 && (
               <button
                 type="button"
                 onClick={() => setIsSummaryExpanded((expanded) => !expanded)}
