@@ -124,7 +124,9 @@ async def get_changes(
             page_size=page_size
         )
 
-    query = query.order_by(ChangeEvent.created_at.desc()).offset(offset).limit(page_size)
+    query = query.order_by(
+        func.coalesce(ChangeEvent.published_at, ChangeEvent.created_at).desc()
+    ).offset(offset).limit(page_size)
     items_res = await db.execute(query)
     items = items_res.scalars().all()
 

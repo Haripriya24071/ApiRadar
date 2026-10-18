@@ -73,7 +73,7 @@ export default function Feed() {
       if (!b.deadline_date) return -1
       return new Date(a.deadline_date).getTime() - new Date(b.deadline_date).getTime()
     }
-    return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+    return new Date(b.published_at || b.created_at || 0).getTime() - new Date(a.published_at || a.created_at || 0).getTime()
   })
 
   const severityTabs = [
@@ -83,14 +83,9 @@ export default function Feed() {
     { label: 'INFO', value: 'INFO' },
   ]
 
-  const tickerItems = [
-    'BREAKING CHANGE DETECTED',
-    'STRIPE API UPDATED',
-    'OPENAI DEPRECATION NOTICE',
-    'GITHUB AUTH SPEC CHANGE',
-    'SUPABASE SCHEMA DIFF',
-    'TWILIO API SUNSET',
-  ]
+  const tickerItems = rawItems.length
+    ? rawItems.slice(0, 8).map((item) => `${item.api?.name || 'API'} · ${item.title}`)
+    : ['MONITORING OFFICIAL PROVIDER SOURCES', 'NO CHANGE EVENTS IN THIS VIEW']
 
   return (
     <div className="min-h-screen bg-[var(--black)] text-[var(--cream)]">

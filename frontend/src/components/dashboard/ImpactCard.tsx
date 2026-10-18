@@ -20,6 +20,8 @@ export default function ImpactCard({ change, index = 0, onMarkResolved }: Impact
     const lower = src.toLowerCase()
     if (lower === 'rss') return 'RSS'
     if (lower === 'github') return 'GITHUB'
+    if (lower === 'github_release') return 'GITHUB RELEASE'
+    if (lower === 'changelog_page') return 'CHANGELOG PAGE'
     if (lower.includes('openapi')) return 'OPENAPI'
     return src.toUpperCase()
   }
@@ -45,7 +47,7 @@ export default function ImpactCard({ change, index = 0, onMarkResolved }: Impact
             <div className="font-['Space_Mono'] text-[10px] text-[var(--muted-dark)] uppercase tracking-wider flex items-center gap-2">
               <span>{change.api?.name || 'API'}</span>
               <span>·</span>
-              <span>{change.created_at ? new Date(change.created_at).toLocaleDateString() : 'RECENT'}</span>
+              <span>{(change.published_at || change.created_at) ? new Date(change.published_at || change.created_at).toLocaleDateString() : 'RECENT'}</span>
             </div>
           </div>
 
