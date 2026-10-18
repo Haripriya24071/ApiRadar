@@ -13,7 +13,6 @@ import BrowseAPIs from './pages/BrowseAPIs'
 import APIDetail from './pages/APIDetail'
 import Settings from './pages/Settings'
 import Toast from './components/ui/Toast'
-import CustomCursor from './components/ui/CustomCursor'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -33,7 +32,6 @@ export default function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <CustomCursor />
       <BrowserRouter>
         <Toast />
         <Routes>

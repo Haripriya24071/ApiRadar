@@ -22,13 +22,6 @@
   --text-on-light: #0D0D0B;
 }
 
-/* Custom Cursor Rules */
-@media (pointer: fine) {
-  *, *::before, *::after {
-    cursor: none !important;
-  }
-}
-
 html {
   font-size: 16px;
   background-color: var(--black);
@@ -78,60 +71,6 @@ code, pre, kbd {
 
 ::-webkit-scrollbar-thumb {
   background: var(--muted-dark);
-}
-
-/* Custom Cursor Styling */
-.cursor-dot {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 8px;
-  height: 8px;
-  background-color: var(--cream);
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 99999;
-  transform: translate(-50%, -50%);
-  transition: opacity 0.15s ease, transform 0.15s ease, background-color 0.15s ease;
-}
-
-.cursor-ring {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 32px;
-  height: 32px;
-  border: 1px solid var(--cream);
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 99998;
-  transform: translate(-50%, -50%);
-  transition: width 0.15s ease, height 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, border-radius 0.15s ease, opacity 0.15s ease;
-}
-
-.cursor-dot.is-hovering-interactive {
-  opacity: 0;
-  transform: translate(-50%, -50%) scale(0);
-}
-
-.cursor-ring.is-hovering-interactive {
-  width: 48px;
-  height: 48px;
-  background-color: var(--red);
-  border-color: var(--red);
-  border-radius: 50%;
-}
-
-.cursor-dot.is-hovering-text {
-  opacity: 0;
-}
-
-.cursor-ring.is-hovering-text {
-  width: 80px;
-  height: 4px;
-  background-color: var(--cream);
-  border-color: var(--cream);
-  border-radius: 2px;
 }
 
 /* Global Utility Classes */
