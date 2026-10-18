@@ -75,6 +75,61 @@ INITIAL_APIS = [
         "openapi_spec_url": None,
         "logo_url": "https://logo.clearbit.com/sendgrid.com",
     },
+    {
+        "name": "Google Gemini",
+        "slug": "gemini",
+        "category": "ai-ml",
+        "changelog_url": "https://ai.google.dev/gemini-api/docs/changelog",
+        "github_repo": "googleapis/python-genai",
+        "logo_url": "https://logo.clearbit.com/google.com",
+    },
+    {
+        "name": "Google Vertex AI",
+        "slug": "vertex-ai",
+        "category": "ai-ml",
+        "changelog_url": "https://docs.cloud.google.com/vertex-ai/docs/release-notes",
+        "rss_feed_url": "https://cloud.google.com/feeds/vertex-ai-product-group-release-notes.xml",
+        "github_repo": "googleapis/python-aiplatform",
+        "logo_url": "https://logo.clearbit.com/cloud.google.com",
+    },
+    {
+        "name": "NewsAPI",
+        "slug": "newsapi",
+        "category": "data",
+        "changelog_url": "https://newsapi.org/docs",
+        "github_repo": "mattlisiv/newsapi-python",
+        "logo_url": "https://logo.clearbit.com/newsapi.org",
+    },
+    {
+        "name": "World Bank Open Data",
+        "slug": "world-bank",
+        "category": "data",
+        "changelog_url": "https://datahelpdesk.worldbank.org/knowledgebase/topics/125589-developer-information",
+        "logo_url": "https://logo.clearbit.com/worldbank.org",
+    },
+    {
+        "name": "Crunchbase",
+        "slug": "crunchbase",
+        "category": "data",
+        "changelog_url": "https://data.crunchbase.com/docs/using-the-api",
+        "logo_url": "https://logo.clearbit.com/crunchbase.com",
+    },
+    {
+        "name": "Google BigQuery",
+        "slug": "bigquery",
+        "category": "data",
+        "changelog_url": "https://docs.cloud.google.com/bigquery/docs/release-notes",
+        "github_repo": "googleapis/python-bigquery",
+        "logo_url": "https://logo.clearbit.com/cloud.google.com",
+    },
+    {
+        "name": "Google Cloud Storage",
+        "slug": "cloud-storage",
+        "category": "cloud",
+        "changelog_url": "https://docs.cloud.google.com/storage/docs/release-notes",
+        "github_repo": "googleapis/python-storage",
+        "logo_url": "https://logo.clearbit.com/cloud.google.com",
+    },
 ]
 
 async def seed(skip_scrape: bool = False):
@@ -90,6 +145,11 @@ async def seed(skip_scrape: bool = False):
                 api = APICatalog(**api_data)
                 db.add(api)
                 seeded_count += 1
+            else:
+                # Keep source metadata current as the built-in catalog evolves.
+                for field, value in api_data.items():
+                    if value is not None:
+                        setattr(existing, field, value)
         await db.commit()
 
     if not skip_scrape:

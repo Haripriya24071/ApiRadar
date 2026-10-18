@@ -78,10 +78,23 @@ const PACKAGE_API_MAPPINGS: Record<string, string> = {
   '@octokit/rest': 'github',
   octokit: 'github',
   pygithub: 'github',
+  'google-genai': 'gemini',
+  'google-generativeai': 'gemini',
+  'langchain-google-genai': 'gemini',
+  'google-cloud-aiplatform': 'vertex-ai',
+  'langchain-google-vertexai': 'vertex-ai',
+  'newsapi-python': 'newsapi',
+  newsapi: 'newsapi',
+  wbgapi: 'world-bank',
+  wbdata: 'world-bank',
+  crunchbase: 'crunchbase',
+  'crunchbase-api': 'crunchbase',
+  'google-cloud-bigquery': 'bigquery',
+  'google-cloud-storage': 'cloud-storage',
 }
 
 export function mapPackageToApiSlug(packageName: string): string | undefined {
-  return PACKAGE_API_MAPPINGS[packageName.trim().toLowerCase()]
+  return PACKAGE_API_MAPPINGS[packageName.trim().toLowerCase().replace(/_/g, '-')]
 }
 
 /**

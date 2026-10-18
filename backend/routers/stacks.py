@@ -12,7 +12,7 @@ from models.user import User
 from models.stack_profile import StackProfile, WatchedAPI
 from models.api_catalog import APICatalog
 from dependencies import get_current_user
-from services.package_parser import parse_package_json, match_apis_to_catalog
+from services.package_parser import parse_package_json, parse_requirements_txt, match_apis_to_catalog
 
 router = APIRouter(prefix="/stacks", tags=["stacks"])
 
@@ -215,7 +215,9 @@ async def parse_package(
     catalog_res = await db.execute(select(APICatalog))
     catalog_apis = catalog_res.scalars().all()
 
-    packages = parse_package_json(req.package_json)
+    packages = parse_requirements_txt(req.package_json) if (
+        "requirements" in req.package_json and "dependencies" not in req.package_json
+    ) else parse_package_json(req.package_json)
     matched = match_apis_to_catalog(packages, catalog_apis)
 
     response = []

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Search, Bell, X, CheckCheck } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { notificationsAPI } from '../../lib/api'
+import { apisAPI, notificationsAPI } from '../../lib/api'
 import { useAuthStore } from '../../store/authStore'
 
 export default function Navbar() {
@@ -14,6 +14,12 @@ export default function Navbar() {
   const [showSearchOverlay, setShowSearchOverlay] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [showNotificationsDropdown, setShowNotificationsDropdown] = useState(false)
+
+  const { data: apis = [] } = useQuery({
+    queryKey: ['apis'],
+    queryFn: apisAPI.list,
+    staleTime: 5 * 60 * 1000,
+  })
 
   // Track notifications
   const { data: countData } = useQuery({
@@ -63,21 +69,11 @@ export default function Navbar() {
   }
 
   // Available APIs for search overlay
-  const apis = [
-    { name: 'Stripe API', slug: 'stripe', category: 'Payments & Financial Infrastructure' },
-    { name: 'OpenAI API', slug: 'openai', category: 'AI & Machine Learning Models' },
-    { name: 'Groq API', slug: 'groq', category: 'AI & Machine Learning Models' },
-    { name: 'Supabase API', slug: 'supabase', category: 'Backend-as-a-Service & Database' },
-    { name: 'Twilio API', slug: 'twilio', category: 'Communications & Telephony' },
-    { name: 'GitHub REST API', slug: 'github', category: 'Version Control & Developer Tools' },
-    { name: 'SendGrid API', slug: 'sendgrid', category: 'Transactional & Marketing Email' },
-  ]
-
   const filteredApis = searchQuery.trim()
     ? apis.filter(
         (a) =>
           a.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          a.category.toLowerCase().includes(searchQuery.toLowerCase())
+          (a.category || '').toLowerCase().includes(searchQuery.toLowerCase())
       )
     : apis
 

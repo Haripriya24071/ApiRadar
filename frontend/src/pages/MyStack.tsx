@@ -1,9 +1,8 @@
 import React, { useState, useRef } from 'react'
 import { useStack } from '../hooks/useStack'
-import { apisAPI } from '../lib/api'
 import { useToast } from '../store/toastStore'
 import { useAuthStore } from '../store/authStore'
-import { mapPackageToApiSlug, parseDependencyFile } from '../lib/packageParser'
+import { parseDependencyFile } from '../lib/packageParser'
 
 interface DetectedApiItem {
   id: string
@@ -18,7 +17,7 @@ export default function MyStack() {
   const toast = useToast()
   const user = useAuthStore((state) => state.user)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const { stacks, createStack, watchAPI, unwatchAPI } = useStack()
+  const { stacks, createStack, watchAPI, unwatchAPI, parsePackage } = useStack()
 
   const [isDragOver, setIsDragOver] = useState(false)
   const [detectedApis, setDetectedApis] = useState<DetectedApiItem[]>([])
@@ -43,26 +42,18 @@ export default function MyStack() {
     try {
       const parsed = parseDependencyFile(fileName, text)
       const deps = { ...parsed.dependencies, ...parsed.devDependencies }
-
-      const allApis = await apisAPI.list()
-      const detected: DetectedApiItem[] = []
-
-      Object.entries(deps).forEach(([pkgName, versionStr]) => {
-        const targetSlug = mapPackageToApiSlug(pkgName)
-        if (targetSlug) {
-          const matchingApi = allApis.find((a: any) => a.slug === targetSlug)
-          if (matchingApi) {
-            detected.push({
-              id: matchingApi.id,
-              name: matchingApi.name,
-              slug: matchingApi.slug,
-              category: matchingApi.category || 'Third-Party Service',
-              version: String(versionStr || 'not pinned'),
-              selected: true,
-            })
-          }
-        }
-      })
+      const stackId = user
+        ? await handleEnsureStack()
+        : currentStack?.id || 'guest-local-stack'
+      const matches = await parsePackage.mutateAsync({ stackId, packageJson: parsed })
+      const detected: DetectedApiItem[] = matches.map(({ api, sdk_version, already_watching }) => ({
+        id: api.id,
+        name: api.name,
+        slug: api.slug,
+        category: api.category || 'Third-Party Service',
+        version: sdk_version || 'not pinned',
+        selected: !already_watching,
+      }))
 
       if (detected.length === 0) {
         toast.info(`Scanned ${Object.keys(deps).length} dependencies in ${fileName}; none matched a currently tracked API SDK.`)
