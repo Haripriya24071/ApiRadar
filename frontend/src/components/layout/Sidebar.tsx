@@ -28,11 +28,11 @@ export default function Sidebar() {
         <button
           type="button"
           onClick={() => {
-            navigate('/dashboard/feed')
+            navigate('/')
             window.scrollTo({ top: 0, behavior: 'smooth' })
           }}
-          aria-label="Return to the start of the ApiRadar dashboard"
-          title="Dashboard home"
+          aria-label="Go to ApiRadar home"
+          title="Home"
           className="h-[52px] w-full flex items-center justify-center px-4 border-b border-[var(--border-dark)] relative hover:bg-[var(--black)]/40 transition-colors"
         >
           <span className="font-['Space_Mono'] text-[14px] text-[var(--cream)] font-bold tracking-widest whitespace-nowrap">
