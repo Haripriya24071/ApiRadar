@@ -55,6 +55,7 @@ class PaginatedChangesResponse(BaseModel):
 async def get_changes(
     severity: Optional[str] = Query(None),
     api_slug: Optional[str] = Query(None),
+    api_slugs: Optional[str] = Query(None, description="Comma-separated API slugs for a guest watchlist"),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     current_user: Optional[User] = Depends(get_optional_user),
@@ -92,8 +93,16 @@ async def get_changes(
             # User has not added watched APIs yet, show global feed
             query = select(ChangeEvent).options(selectinload(ChangeEvent.api))
     else:
-        # Guest / unauthenticated user: show all breaking change events
-        query = select(ChangeEvent).options(selectinload(ChangeEvent.api))
+        guest_slugs = [slug.strip() for slug in (api_slugs or "").split(",") if slug.strip()]
+        if guest_slugs:
+            query = (
+                select(ChangeEvent)
+                .join(APICatalog, ChangeEvent.api_id == APICatalog.id)
+                .where(APICatalog.slug.in_(guest_slugs))
+                .options(selectinload(ChangeEvent.api))
+            )
+        else:
+            query = select(ChangeEvent).options(selectinload(ChangeEvent.api))
 
     # Exclude soft-resolved change events
     if resolved_ids:
@@ -128,6 +137,7 @@ async def get_changes(
 
 @router.get("/critical", response_model=List[ChangeEventResponse])
 async def get_critical_changes(
+    api_slugs: Optional[str] = Query(None, description="Comma-separated API slugs for a guest watchlist"),
     current_user: Optional[User] = Depends(get_optional_user),
     db: AsyncSession = Depends(get_db)
 ):
@@ -161,11 +171,14 @@ async def get_critical_changes(
                 .options(selectinload(ChangeEvent.api))
             )
     else:
+        guest_slugs = [slug.strip() for slug in (api_slugs or "").split(",") if slug.strip()]
         stmt = (
             select(ChangeEvent)
             .where(ChangeEvent.severity == "CRITICAL")
             .options(selectinload(ChangeEvent.api))
         )
+        if guest_slugs:
+            stmt = stmt.join(APICatalog, ChangeEvent.api_id == APICatalog.id).where(APICatalog.slug.in_(guest_slugs))
 
     if resolved_ids:
         stmt = stmt.where(ChangeEvent.id.not_in(resolved_ids))

@@ -1,5 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { changesAPI } from '../lib/api'
+import { useStack } from './useStack'
+import { useAuthStore } from '../store/authStore'
 
 export interface APIBase {
   id: string
@@ -35,19 +37,28 @@ export interface PaginatedChangesResponse {
 export interface ChangesFilterParams {
   severity?: string
   api_slug?: string
+  api_slugs?: string
   page?: number
   page_size?: number
 }
 
 export function useChanges(params?: ChangesFilterParams) {
+  const user = useAuthStore((state) => state.user)
+  const { stacks } = useStack()
+  const guestSlugs = !user
+    ? (stacks.data?.[0]?.watched_apis || []).map((watch) => watch.api.slug).filter(Boolean).join(',')
+    : undefined
+  const requestParams = { ...params, api_slugs: params?.api_slugs ?? guestSlugs }
   const changes = useQuery<PaginatedChangesResponse>({
-    queryKey: ['changes', params],
-    queryFn: () => changesAPI.list(params),
+    queryKey: ['changes', requestParams],
+    queryFn: () => changesAPI.list(requestParams),
+    refetchInterval: 60_000,
   })
 
   const criticalChanges = useQuery<ChangeEventResponse[]>({
-    queryKey: ['changes', 'critical'],
-    queryFn: changesAPI.getCritical,
+    queryKey: ['changes', 'critical', guestSlugs],
+    queryFn: () => changesAPI.getCritical({ api_slugs: guestSlugs }),
+    refetchInterval: 60_000,
   })
 
   const getChange = (id: string) => {

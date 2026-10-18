@@ -5,12 +5,14 @@ import { useToast } from '../store/toastStore'
 import { changesAPI } from '../lib/api'
 import ImpactCard from '../components/dashboard/ImpactCard'
 import { useAuthStore } from '../store/authStore'
+import { useQueryClient } from '@tanstack/react-query'
 
 const GUEST_RESOLVED_KEY = 'apiradar_guest_resolved_changes'
 
 export default function Feed() {
   const navigate = useNavigate()
   const toast = useToast()
+  const queryClient = useQueryClient()
   const user = useAuthStore((state) => state.user)
   const [activeSeverity, setActiveSeverity] = useState<string | null>(null)
   const [sortBy, setSortBy] = useState<'newest' | 'deadline'>('newest')
@@ -37,6 +39,7 @@ export default function Feed() {
   }
 
   const handleMarkResolved = async (id: string) => {
+    const previous = resolvedIds
     setResolvedIds((prev) => {
       const next = new Set(prev).add(id)
       if (!user) localStorage.setItem(GUEST_RESOLVED_KEY, JSON.stringify([...next]))
@@ -46,8 +49,11 @@ export default function Feed() {
     if (!user) return
     try {
       await changesAPI.resolve(id)
+      await queryClient.invalidateQueries({ queryKey: ['changes'] })
     } catch (err) {
       console.error('Failed to mark resolved on backend:', err)
+      setResolvedIds(previous)
+      toast.error('Could not save this change as resolved. Please retry.')
     }
   }
 

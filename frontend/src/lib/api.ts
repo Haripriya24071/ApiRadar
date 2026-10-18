@@ -88,12 +88,13 @@ export const changesAPI = {
   list: (params?: {
     severity?: string
     api_slug?: string
+    api_slugs?: string
     page?: number
     page_size?: number
   }): Promise<PaginatedChangesResponse> =>
     api.get('/api/changes', { params }).then((res) => res.data),
-  getCritical: (): Promise<ChangeEvent[]> =>
-    api.get('/api/changes/critical').then((res) => res.data),
+  getCritical: (params?: { api_slugs?: string }): Promise<ChangeEvent[]> =>
+    api.get('/api/changes/critical', { params }).then((res) => res.data),
   getById: (id: string): Promise<ChangeEvent> =>
     api.get(`/api/changes/${id}`).then((res) => res.data),
   resolve: (id: string): Promise<{ status: string; message: string; change_id: string }> =>
