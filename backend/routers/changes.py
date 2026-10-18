@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime, date
 from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
@@ -14,6 +14,7 @@ from models.change_event import ChangeEvent
 from models.api_catalog import APICatalog
 from models.resolved_change import UserResolvedChange
 from dependencies import get_current_user, get_optional_user
+from services.content_sanitizer import clean_source_text
 
 router = APIRouter(prefix="/changes", tags=["changes"])
 
@@ -41,6 +42,11 @@ class ChangeEventResponse(BaseModel):
     published_at: Optional[datetime] = None
     created_at: datetime
     api: APIBaseResponse
+
+    @field_validator("title", "what_changed", "migration_summary", mode="before")
+    @classmethod
+    def sanitize_provider_text(cls, value):
+        return clean_source_text(value) if isinstance(value, str) else value
 
     class Config:
         from_attributes = True

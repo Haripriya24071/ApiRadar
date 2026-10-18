@@ -5,6 +5,7 @@ from openai import AsyncOpenAI
 from config import settings
 from llm.cache import LLMCache
 from services.content_sanitizer import classify_change_severity
+from services.content_sanitizer import clean_source_text
 
 cache = LLMCache()
 
@@ -29,11 +30,11 @@ async def summarize_change(raw) -> List[Dict[str, Any]]:
             endpoints = item.get("affected_endpoints")
             normalized_cached.append({
                 "severity": classify_change_severity(raw.title + "\n" + raw.content, severity),
-                "title": str(item.get("title") or raw.title)[:100],
-                "what_changed": item.get("what_changed")[:5000] if isinstance(item.get("what_changed"), str) else raw.content[:5000],
+                "title": clean_source_text(str(item.get("title") or raw.title))[:100],
+                "what_changed": clean_source_text(item.get("what_changed"))[:5000] if isinstance(item.get("what_changed"), str) else raw.content[:5000],
                 "affected_endpoints": [value.strip()[:500] for value in endpoints if isinstance(value, str) and value.strip()][:100] if isinstance(endpoints, list) else [],
                 "deadline_date": _parse_deadline_date(deadline) if isinstance(deadline, str) else deadline if isinstance(deadline, date) else None,
-                "migration_summary": item.get("migration_summary")[:5000] if isinstance(item.get("migration_summary"), str) else None,
+                "migration_summary": clean_source_text(item.get("migration_summary"))[:5000] if isinstance(item.get("migration_summary"), str) else None,
                 "effort_estimate": item.get("effort_estimate")[:100] if isinstance(item.get("effort_estimate"), str) else None,
             })
         return normalized_cached
@@ -42,8 +43,8 @@ async def summarize_change(raw) -> List[Dict[str, Any]]:
         sev = classify_change_severity(raw.title + "\n" + raw.content, severity)
         res = [{
             "severity": sev,
-            "title": raw.title[:100],
-            "what_changed": raw.content[:500],
+            "title": clean_source_text(raw.title)[:100],
+            "what_changed": clean_source_text(raw.content)[:500],
             "affected_endpoints": [],
             "deadline_date": None,
             "migration_summary": None,
@@ -144,11 +145,11 @@ async def summarize_change(raw) -> List[Dict[str, Any]]:
 
             change_dict = {
             "severity": classify_change_severity(raw.title + "\n" + raw.content, severity),
-                "title": str(item.get("title", raw.title))[:100],
-                "what_changed": (item.get("what_changed")[:5000] if isinstance(item.get("what_changed"), str) and item.get("what_changed") else raw.content[:5000]),
+                "title": clean_source_text(str(item.get("title", raw.title)))[:100],
+                "what_changed": (clean_source_text(item.get("what_changed"))[:5000] if isinstance(item.get("what_changed"), str) and item.get("what_changed") else clean_source_text(raw.content)[:5000]),
                 "affected_endpoints": endpoints,
                 "deadline_date": parsed_deadline,
-                "migration_summary": migration_summary[:5000] if isinstance(migration_summary, str) else None,
+                "migration_summary": clean_source_text(migration_summary)[:5000] if isinstance(migration_summary, str) else None,
                 "effort_estimate": effort_estimate[:100] if isinstance(effort_estimate, str) else None,
             }
             structured_changes.append(change_dict)

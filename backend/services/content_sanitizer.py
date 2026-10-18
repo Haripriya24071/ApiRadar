@@ -49,11 +49,22 @@ def clean_source_text(value: str | None) -> str:
     text = re.sub(r"`{1,3}", "", text)
     text = re.sub(r"\*\*(.*?)\*\*|__(.*?)__", lambda m: m.group(1) or m.group(2) or "", text)
     text = re.sub(r"(?<!\w)[*_~](.*?)[*_~](?!\w)", r"\1", text)
+    text = re.sub(r"^\s*\[[^\]]+\]:\s*\S+.*$", "", text, flags=re.MULTILINE)
     text = re.sub(r"\r", "", text)
     text = re.sub(r"[ \t]+", " ", text)
     text = re.sub(r" *\n *", "\n", text)
     text = re.sub(r"\n{3,}", "\n\n", text)
-    return text.strip()
+    # Release feeds often repeat the same heading or status line in nested
+    # product sections. Remove adjacent duplicates without losing distinct entries.
+    lines = []
+    previous_content_line = None
+    for line in text.splitlines():
+        if line.strip():
+            if line.strip().casefold() == previous_content_line:
+                continue
+            previous_content_line = line.strip().casefold()
+        lines.append(line)
+    return "\n".join(lines).strip()
 
 
 _CRITICAL_PATTERNS = re.compile(
@@ -90,8 +101,17 @@ _GENERIC_RSS_TITLE = re.compile(
 
 def improve_rss_title(title: str, content: str) -> str:
     clean_title = clean_source_text(title)
+    clean_content = clean_source_text(content)
+    lines = [line.strip() for line in clean_content.splitlines() if line.strip()]
     if _GENERIC_RSS_TITLE.fullmatch(clean_title.strip()):
-        first_line = next((line.strip() for line in clean_source_text(content).splitlines() if line.strip()), "")
+        first_line = lines[0] if lines else ""
         if first_line:
             return first_line[:500]
+    if lines and lines[0].casefold() == clean_title.strip().casefold():
+        release_id = next(
+            (match for line in lines[1:] if (match := re.search(r"\b20\d{6}[-.]\d{4}(?:-[a-z0-9.-]+)?\b", line, re.IGNORECASE))),
+            None,
+        )
+        if release_id:
+            return f"{clean_title} · {release_id.group(0)}"[:500]
     return clean_title[:500] or "Provider update"
