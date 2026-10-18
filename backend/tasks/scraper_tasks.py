@@ -1,6 +1,6 @@
 import asyncio
 from datetime import datetime, timezone
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from tasks.celery_app import celery_app
 from database import SessionLocal
 from models.api_catalog import APICatalog
@@ -54,7 +54,7 @@ async def _async_run_all_changelog_pages():
     async with SessionLocal() as db:
         result = await db.execute(select(APICatalog).where(
             APICatalog.changelog_url.isnot(None), APICatalog.changelog_url != "",
-            APICatalog.rss_feed_url.is_(None),
+            or_(APICatalog.rss_feed_url.is_(None), APICatalog.rss_feed_url == ""),
         ))
         for api in result.scalars().all():
             try:

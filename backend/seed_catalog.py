@@ -9,8 +9,8 @@ INITIAL_APIS = [
         "name": "Stripe",
         "slug": "stripe",
         "category": "payments",
-        "changelog_url": "https://stripe.com/docs/changelog",
-        "rss_feed_url": "https://stripe.com/docs/changelog.rss",
+        "changelog_url": "https://docs.stripe.com/changelog",
+        "rss_feed_url": None,
         "github_repo": "stripe/stripe-python",
         "openapi_spec_url": "https://raw.githubusercontent.com/stripe/openapi/master/openapi/spec3.json",
         "logo_url": "https://logo.clearbit.com/stripe.com",
@@ -148,8 +148,7 @@ async def seed(skip_scrape: bool = False):
             else:
                 # Keep source metadata current as the built-in catalog evolves.
                 for field, value in api_data.items():
-                    if value is not None:
-                        setattr(existing, field, value)
+                    setattr(existing, field, value)
         await db.commit()
 
     if not skip_scrape:
