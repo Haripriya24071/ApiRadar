@@ -43,6 +43,8 @@ def clean_source_text(value: str | None) -> str:
 
     text = re.sub(r"!\[([^\]]*)\]\([^)]*\)", r"\1", text)
     text = re.sub(r"\[([^\]]+)\]\((?:[^()]|\([^()]*\))*\)", r"\1", text)
+    # LLM output can be truncated mid-link; remove the unfinished destination too.
+    text = re.sub(r"\[([^\]]+)\]\(https?://[^\s]*", r"\1", text)
     text = re.sub(r"^\s{0,3}#{1,6}\s*", "", text, flags=re.MULTILINE)
     text = re.sub(r"^\s*[-*+]\s+", "• ", text, flags=re.MULTILINE)
     text = re.sub(r"^\s*>\s?", "", text, flags=re.MULTILINE)
