@@ -120,7 +120,7 @@ export default function Feed() {
           {[0, 1].map((copy) => (
             <div key={copy} className="ticker-group" aria-hidden={copy === 1}>
               {tickerItems.map((item, idx) => (
-                <span key={`${copy}-${idx}`} className="ticker-item" title={item}>
+                <span key={`${copy}-${idx}`} className="ticker-item" aria-label={copy === 0 ? item : undefined}>
                   {item}<span className="opacity-50">·</span>
                 </span>
               ))}

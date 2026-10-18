@@ -10,6 +10,7 @@ interface ImpactCardProps {
 
 export default function ImpactCard({ change, index = 0, onMarkResolved }: ImpactCardProps) {
   const [isFlipped, setIsFlipped] = useState(false)
+  const [isSummaryExpanded, setIsSummaryExpanded] = useState(false)
 
   // Format section index like T-001
   const formattedIndex = `T-${String(index + 1).padStart(3, '0')}`
@@ -52,7 +53,7 @@ export default function ImpactCard({ change, index = 0, onMarkResolved }: Impact
           </div>
 
           {/* Main Content */}
-          <div className="p-5 flex-1 flex flex-col justify-start">
+          <div className="p-5 flex-1 min-h-0 overflow-y-auto flex flex-col justify-start">
             <div className="font-['Space_Mono'] text-[10px] text-[var(--muted-dark)] tracking-widest uppercase">
               {formattedIndex}
             </div>
@@ -62,9 +63,20 @@ export default function ImpactCard({ change, index = 0, onMarkResolved }: Impact
             </h3>
 
             {change.what_changed && (
-              <p className="font-['Space_Grotesk'] text-[14px] font-light text-[var(--muted-light)] mt-2 line-clamp-4 leading-relaxed">
+              <p className={`font-['Space_Grotesk'] text-[14px] font-light text-[var(--muted-light)] mt-2 leading-relaxed ${isSummaryExpanded ? 'whitespace-pre-line' : 'line-clamp-4'}`}>
                 {change.what_changed}
               </p>
+            )}
+
+            {Boolean(change.what_changed && change.what_changed.length > 240) && (
+              <button
+                type="button"
+                onClick={() => setIsSummaryExpanded((expanded) => !expanded)}
+                aria-expanded={isSummaryExpanded}
+                className="self-start mt-2 font-['Space_Mono'] text-[10px] text-[var(--gold)] hover:text-[var(--cream)] underline underline-offset-4"
+              >
+                {isSummaryExpanded ? 'SHOW LESS' : 'READ FULL SUMMARY'}
+              </button>
             )}
 
             {/* Affected Endpoints */}
