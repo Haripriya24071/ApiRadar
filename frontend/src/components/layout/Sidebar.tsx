@@ -25,11 +25,17 @@ export default function Sidebar() {
     >
       <div>
         {/* Logo area */}
-        <div className="h-[52px] flex items-center justify-center px-4 border-b border-[var(--border-dark)] relative">
+        <button
+          type="button"
+          onClick={() => navigate('/dashboard')}
+          aria-label="Go to ApiRadar dashboard"
+          title="Go to dashboard"
+          className="h-[52px] w-full flex items-center justify-center px-4 border-b border-[var(--border-dark)] relative hover:bg-[var(--black)]/40 transition-colors"
+        >
           <span className="font-['Space_Mono'] text-[14px] text-[var(--cream)] font-bold tracking-widest whitespace-nowrap">
             {isHovered ? 'APIRADAR©' : 'AR©'}
           </span>
-        </div>
+        </button>
 
         {/* Navigation */}
         <nav className="mt-8 space-y-1">
