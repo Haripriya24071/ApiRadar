@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import List, Optional
 import httpx
 from sqlalchemy import select
@@ -59,13 +59,6 @@ class GitHubReleaseScraper(BaseScraper):
 
             pub_str = release.get("published_at")
             published_at = _parse_iso_datetime(pub_str)
-
-            if published_at and self.api.last_scraped_at:
-                last_scraped = self.api.last_scraped_at
-                if last_scraped.tzinfo is None:
-                    last_scraped = last_scraped.replace(tzinfo=timezone.utc)
-                if published_at <= last_scraped:
-                    continue
 
             html_url = release.get("html_url") or ""
             title = release.get("name") or release.get("tag_name") or f"{self.api.name} Release"

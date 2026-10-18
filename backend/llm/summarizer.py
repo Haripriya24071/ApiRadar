@@ -16,12 +16,26 @@ def _parse_deadline_date(val: Any) -> Optional[date]:
         return None
 
 async def summarize_change(raw) -> List[Dict[str, Any]]:
-    cached_result = cache.get(raw.content)
+    cache_key = f"{raw.api_name}\0{raw.source}\0{raw.url}\0{raw.content}"
+    cached_result = cache.get(cache_key)
     if cached_result is not None and isinstance(cached_result, list):
-        for c in cached_result:
-            if isinstance(c.get("deadline_date"), str):
-                c["deadline_date"] = _parse_deadline_date(c["deadline_date"])
-        return cached_result
+        normalized_cached = []
+        for item in cached_result:
+            if not isinstance(item, dict):
+                continue
+            deadline = item.get("deadline_date")
+            severity = str(item.get("severity", "INFO")).upper()
+            endpoints = item.get("affected_endpoints")
+            normalized_cached.append({
+                "severity": severity if severity in {"CRITICAL", "WARNING", "INFO"} else "INFO",
+                "title": str(item.get("title") or raw.title)[:100],
+                "what_changed": item.get("what_changed")[:5000] if isinstance(item.get("what_changed"), str) else raw.content[:5000],
+                "affected_endpoints": [value.strip()[:500] for value in endpoints if isinstance(value, str) and value.strip()][:100] if isinstance(endpoints, list) else [],
+                "deadline_date": _parse_deadline_date(deadline) if isinstance(deadline, str) else deadline if isinstance(deadline, date) else None,
+                "migration_summary": item.get("migration_summary")[:5000] if isinstance(item.get("migration_summary"), str) else None,
+                "effort_estimate": item.get("effort_estimate")[:100] if isinstance(item.get("effort_estimate"), str) else None,
+            })
+        return normalized_cached
 
     def build_fallback(severity: str = "INFO") -> List[Dict[str, Any]]:
         content_lower = (raw.title + " " + raw.content).lower()
@@ -41,7 +55,7 @@ async def summarize_change(raw) -> List[Dict[str, Any]]:
             "migration_summary": None,
             "effort_estimate": None
         }]
-        cache.set(raw.content, res)
+        cache.set(cache_key, res)
         return res
 
     api_key = settings.OPENAI_API_KEY
@@ -122,15 +136,26 @@ async def summarize_change(raw) -> List[Dict[str, Any]]:
             
             raw_deadline = item.get("deadline_date")
             parsed_deadline = _parse_deadline_date(raw_deadline)
+            severity = str(item.get("severity", "INFO")).upper()
+            if severity not in {"CRITICAL", "WARNING", "INFO"}:
+                severity = "INFO"
+            raw_endpoints = item.get("affected_endpoints")
+            endpoints = (
+                [endpoint.strip()[:500] for endpoint in raw_endpoints if isinstance(endpoint, str) and endpoint.strip()][:100]
+                if isinstance(raw_endpoints, list)
+                else []
+            )
+            migration_summary = item.get("migration_summary")
+            effort_estimate = item.get("effort_estimate")
 
             change_dict = {
-                "severity": item.get("severity", "INFO"),
+                "severity": severity,
                 "title": str(item.get("title", raw.title))[:100],
-                "what_changed": item.get("what_changed") or raw.content[:500],
-                "affected_endpoints": item.get("affected_endpoints") if isinstance(item.get("affected_endpoints"), list) else [],
+                "what_changed": (item.get("what_changed")[:5000] if isinstance(item.get("what_changed"), str) and item.get("what_changed") else raw.content[:5000]),
+                "affected_endpoints": endpoints,
                 "deadline_date": parsed_deadline,
-                "migration_summary": item.get("migration_summary"),
-                "effort_estimate": item.get("effort_estimate"),
+                "migration_summary": migration_summary[:5000] if isinstance(migration_summary, str) else None,
+                "effort_estimate": effort_estimate[:100] if isinstance(effort_estimate, str) else None,
             }
             structured_changes.append(change_dict)
 
@@ -138,7 +163,7 @@ async def summarize_change(raw) -> List[Dict[str, Any]]:
             cache_item["deadline_date"] = raw_deadline if parsed_deadline else None
             cache_serializable_changes.append(cache_item)
 
-        cache.set(raw.content, cache_serializable_changes)
+        cache.set(cache_key, cache_serializable_changes)
         return structured_changes
 
     except Exception as e:

@@ -36,7 +36,9 @@ class BaseScraper(ABC):
                     "api_id": raw.api_id,
                     "source": raw.source,
                     "published_at": raw.published_at,
-                    "raw_content": raw.content[:500],
+                    # Keep the canonical source URL with the payload so future
+                    # scrapes can reliably identify the event.
+                    "raw_content": f"{raw.url}\n{raw.content}"[:5000],
                 })
                 structured_changes.append(enriched)
         return structured_changes

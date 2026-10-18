@@ -34,7 +34,7 @@ class ChangeEventResponse(BaseModel):
     severity: str
     title: str
     what_changed: Optional[str] = None
-    affected_endpoints: Optional[List[str]] = []
+    affected_endpoints: Optional[List[str]] = None
     deadline_date: Optional[date] = None
     migration_summary: Optional[str] = None
     effort_estimate: Optional[str] = None

@@ -1,6 +1,7 @@
 import uuid
-from typing import AsyncGenerator
-from fastapi import Depends, HTTPException, status
+import hmac
+from typing import Optional
+from fastapi import Depends, HTTPException, Header, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -8,9 +9,17 @@ from sqlalchemy import select
 from database import get_db
 from models.user import User
 from services.auth_service import decode_access_token
+from config import settings
 
 security = HTTPBearer()
 security_optional = HTTPBearer(auto_error=False)
+
+async def require_admin_key(x_admin_key: Optional[str] = Header(default=None)) -> None:
+    """Protect operational endpoints with a separately configured secret."""
+    if not settings.ADMIN_API_KEY:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Admin operations are disabled")
+    if not x_admin_key or not hmac.compare_digest(x_admin_key, settings.ADMIN_API_KEY):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid admin key")
 
 async def get_optional_user(
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(security_optional),

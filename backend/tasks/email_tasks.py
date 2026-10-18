@@ -1,4 +1,5 @@
 import asyncio
+from html import escape
 from datetime import datetime, timedelta, timezone
 from typing import List
 from sqlalchemy import select
@@ -19,6 +20,8 @@ def build_digest_email(user_email: str, changes: List[ChangeEvent]) -> str:
     rows_html = ""
     for change in changes:
         severity = (change.severity or "INFO").upper()
+        if severity not in {"CRITICAL", "WARNING", "INFO"}:
+            severity = "INFO"
         if severity == "CRITICAL":
             badge_color = "#ef4444"
             badge_bg = "rgba(239, 68, 68, 0.15)"
@@ -32,16 +35,16 @@ def build_digest_email(user_email: str, changes: List[ChangeEvent]) -> str:
             badge_bg = "rgba(59, 130, 246, 0.15)"
             badge_border = "#3b82f6"
 
-        api_name = change.api.name if hasattr(change, "api") and change.api else "Watched API"
-        title = change.title or "API Change Event"
+        api_name = escape(change.api.name if hasattr(change, "api") and change.api else "Watched API")
+        title = escape(change.title or "API Change Event")
         
-        mig_summary = change.migration_summary or ""
+        mig_summary = escape(change.migration_summary or "")
         if len(mig_summary) > 200:
             mig_summary = mig_summary[:200] + "..."
 
         deadline_str = ""
         if change.deadline_date:
-            deadline_str = f'<div style="margin-top: 8px; font-size: 12px; color: #ef4444; font-weight: 600;">⏰ Action Deadline: {change.deadline_date}</div>'
+            deadline_str = f'<div style="margin-top: 8px; font-size: 12px; color: #ef4444; font-weight: 600;">⏰ Action Deadline: {escape(str(change.deadline_date))}</div>'
 
         migration_html = ""
         if mig_summary:

@@ -1,12 +1,13 @@
 import os
 import logging
-from fastapi import FastAPI, Request, HTTPException, status
+from fastapi import FastAPI, Request, HTTPException, Depends, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from config import settings
 from database import init_db
 from routers import auth, stacks, changes, apis, notifications
+from dependencies import require_admin_key
 from tasks.scraper_tasks import (
     run_all_scrapers,
     run_all_rss_scrapers,
@@ -82,27 +83,27 @@ async def startup_event():
 async def ping():
     return {"status": "ok", "message": "ApiRadar is alive"}
 
-@app.get("/admin/test-task")
+@app.post("/admin/test-task", dependencies=[Depends(require_admin_key)])
 async def test_task():
     task = run_all_rss_scrapers.delay()
     return {"status": "task queued", "task_id": task.id}
 
-@app.get("/admin/scrape/all")
+@app.post("/admin/scrape/all", dependencies=[Depends(require_admin_key)])
 async def trigger_all_scrapers():
     task = run_all_scrapers.delay()
     return {"status": "queued", "task_id": task.id}
 
-@app.get("/admin/scrape/rss")
+@app.post("/admin/scrape/rss", dependencies=[Depends(require_admin_key)])
 async def trigger_rss_scrapers():
     task = run_all_rss_scrapers.delay()
     return {"status": "queued", "task_id": task.id}
 
-@app.get("/admin/scrape/github")
+@app.post("/admin/scrape/github", dependencies=[Depends(require_admin_key)])
 async def trigger_github_scrapers():
     task = run_all_github_scrapers.delay()
     return {"status": "queued", "task_id": task.id}
 
-@app.get("/admin/scrape/{api_slug}")
+@app.post("/admin/scrape/{api_slug}", dependencies=[Depends(require_admin_key)])
 async def trigger_single_api_scraper(api_slug: str):
     task = scrape_single_api.delay(api_slug)
     return {"status": "queued", "task_id": task.id}

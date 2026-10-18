@@ -4,7 +4,9 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from config import settings
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# bcrypt_sha256 avoids bcrypt's 72-byte password truncation/limit while the
+# legacy bcrypt scheme remains available for existing accounts.
+pwd_context = CryptContext(schemes=["bcrypt_sha256", "bcrypt"], deprecated="auto")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_DAYS = 7
 

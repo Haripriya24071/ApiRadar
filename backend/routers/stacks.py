@@ -49,7 +49,7 @@ class StackResponse(BaseModel):
     id: uuid.UUID
     name: str
     created_at: datetime
-    watched_apis: List[WatchedAPIResponse] = []
+    watched_apis: List[WatchedAPIResponse] = Field(default_factory=list)
 
     class Config:
         from_attributes = True

@@ -32,17 +32,17 @@ async def fetch_spec(url: str) -> Optional[dict]:
 
 def classify_diff(change_type: str, path: str) -> str:
     path_lower = path.lower()
-    if change_type == "dictionary_item_removed" and "paths" in path_lower:
+    # DeepDiff represents changes inside JSON arrays (including OpenAPI's
+    # required-property arrays) as set_item_added/set_item_removed.
+    if change_type in {"dictionary_item_removed", "set_item_removed"} and "paths" in path_lower:
         return "CRITICAL"
-    if change_type == "dictionary_item_removed" and "required" in path_lower:
-        return "CRITICAL"
-    if change_type == "dictionary_item_added" and "required" in path_lower:
+    if change_type in {"dictionary_item_removed", "dictionary_item_added", "set_item_added"} and "required" in path_lower:
         return "CRITICAL"
     if change_type == "type_changes" and "schema" in path_lower:
         return "WARNING"
     if change_type == "values_changed" and "deprecated" in path_lower:
         return "WARNING"
-    if change_type == "dictionary_item_added" and "paths" in path_lower:
+    if change_type in {"dictionary_item_added", "set_item_added"} and "paths" in path_lower:
         return "INFO"
     return "INFO"
 

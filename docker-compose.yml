@@ -1,10 +1,8 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:15
     container_name: apiradar_postgres
-    restart: always
+    restart: unless-stopped
     environment:
       POSTGRES_DB: apiradar
       POSTGRES_USER: postgres
@@ -13,40 +11,102 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d apiradar"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   redis:
     image: redis:7-alpine
     container_name: apiradar_redis
-    restart: always
+    restart: unless-stopped
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
   backend:
     build:
       context: .
       dockerfile: Dockerfile.backend
     container_name: apiradar_backend
-    restart: always
+    restart: unless-stopped
     ports:
       - "8000:8000"
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     volumes:
       - ./backend:/app
     env_file:
       - .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/apiradar
+      REDIS_URL: redis://redis:6379/0
+    healthcheck:
+      test: ["CMD", "python", "healthcheck.py"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: apiradar_worker
+    restart: unless-stopped
+    command: ["celery", "-A", "tasks.celery_app.celery_app", "worker", "--loglevel=info"]
+    depends_on:
+      backend:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/apiradar
+      REDIS_URL: redis://redis:6379/0
+
+  beat:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: apiradar_beat
+    restart: unless-stopped
+    command: ["celery", "-A", "tasks.celery_app.celery_app", "beat", "--loglevel=info"]
+    depends_on:
+      backend:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/apiradar
+      REDIS_URL: redis://redis:6379/0
 
   frontend:
     build:
       context: .
       dockerfile: Dockerfile.frontend
     container_name: apiradar_frontend
-    restart: always
+    restart: unless-stopped
     ports:
       - "5173:5173"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     volumes:
       - ./frontend:/app
 
