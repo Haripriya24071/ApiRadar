@@ -84,7 +84,7 @@ export default function Feed() {
   ]
 
   const tickerItems = rawItems.length
-    ? rawItems.slice(0, 8).map((item) => `${item.api?.name || 'API'} · ${item.title}`)
+    ? rawItems.slice(0, 6).map((item) => `${item.api?.name || 'API'} · ${item.title}`)
     : ['MONITORING OFFICIAL PROVIDER SOURCES', 'NO CHANGE EVENTS IN THIS VIEW']
 
   return (
@@ -117,10 +117,14 @@ export default function Feed() {
       {/* TICKER BAND */}
       <div className="ticker-band border-y border-[var(--border-dark)]">
         <div className="ticker-inner">
-          {[...tickerItems, ...tickerItems, ...tickerItems].map((item, idx) => (
-            <span key={idx} className="inline-flex items-center gap-3">
-              {item} <span className="opacity-50">·</span>
-            </span>
+          {[0, 1].map((copy) => (
+            <div key={copy} className="ticker-group" aria-hidden={copy === 1}>
+              {tickerItems.map((item, idx) => (
+                <span key={`${copy}-${idx}`} className="ticker-item" title={item}>
+                  {item}<span className="opacity-50">·</span>
+                </span>
+              ))}
+            </div>
           ))}
         </div>
       </div>

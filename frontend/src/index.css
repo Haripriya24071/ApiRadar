@@ -137,9 +137,37 @@ code, pre, kbd {
 }
 
 .ticker-inner {
-  display: inline-flex;
-  gap: 40px;
+  display: flex;
+  width: max-content;
   animation: ticker-scroll 25s linear infinite;
+}
+
+.ticker-group {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 40px;
+  padding-right: 40px;
+}
+
+.ticker-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  max-width: min(68vw, 560px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ticker-band:hover .ticker-inner,
+.ticker-band:focus-within .ticker-inner {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ticker-inner {
+    animation: none;
+  }
 }
 
 @keyframes ticker-scroll {

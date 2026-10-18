@@ -62,7 +62,7 @@ export default function ImpactCard({ change, index = 0, onMarkResolved }: Impact
             </h3>
 
             {change.what_changed && (
-              <p className="font-['Space_Grotesk'] text-[13px] font-light text-[var(--muted-light)] mt-2 line-clamp-2 leading-relaxed">
+              <p className="font-['Space_Grotesk'] text-[14px] font-light text-[var(--muted-light)] mt-2 line-clamp-4 leading-relaxed">
                 {change.what_changed}
               </p>
             )}
