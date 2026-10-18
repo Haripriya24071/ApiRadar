@@ -5,6 +5,7 @@ from models.change_event import ChangeEvent
 from models.openapi_snapshot import OpenAPISnapshot
 from models.notification import Notification
 from models.resolved_change import UserResolvedChange
+from models.changelog_snapshot import ChangelogSnapshot
 
 __all__ = [
     "User",
@@ -15,4 +16,5 @@ __all__ = [
     "OpenAPISnapshot",
     "Notification",
     "UserResolvedChange",
+    "ChangelogSnapshot",
 ]

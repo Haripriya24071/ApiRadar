@@ -10,6 +10,7 @@ from services.notification_service import create_notifications_for_change
 
 async def _async_run_all_openapi_diffs():
     apis_diffed = 0
+    apis_failed = 0
     total_changes = 0
 
     async with SessionLocal() as db:
@@ -31,11 +32,12 @@ async def _async_run_all_openapi_diffs():
                     await create_notifications_for_change(event, db)
                     total_changes += 1
             except Exception as e:
+                apis_failed += 1
                 print(f"Error running OpenAPI diff for API {api.slug}: {e}")
 
         await db.commit()
 
-    return {"status": "ok", "apis_diffed": apis_diffed, "changes_found": total_changes}
+    return {"status": "ok", "apis_diffed": apis_diffed, "apis_failed": apis_failed, "changes_found": total_changes}
 
 @celery_app.task
 def run_all_openapi_diffs():

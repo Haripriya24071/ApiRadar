@@ -1,5 +1,7 @@
 import os
+import asyncio
 import logging
+from datetime import datetime, timezone
 from fastapi import FastAPI, Request, HTTPException, Depends, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
@@ -13,7 +15,12 @@ from tasks.scraper_tasks import (
     run_all_rss_scrapers,
     run_all_github_scrapers,
     scrape_single_api,
+    _async_run_all_rss_scrapers,
+    _async_run_all_github_scrapers,
+    _async_run_all_changelog_pages,
 )
+from tasks.diff_tasks import _async_run_all_openapi_diffs
+from seed_catalog import seed as seed_catalog
 
 # Configure logging to console and file
 os.makedirs("logs", exist_ok=True)
@@ -77,11 +84,83 @@ app.include_router(notifications.router, prefix="/api")
 @app.on_event("startup")
 async def startup_event():
     await init_db()
+    await seed_catalog(skip_scrape=True)
+    app.state.scheduler_task = None
+    app.state.scheduler_status = {
+        "enabled": settings.INLINE_MONITORING_ENABLED,
+        "last_scrape_at": None,
+        "last_openapi_diff_at": None,
+        "last_error": None,
+    }
+    if settings.INLINE_MONITORING_ENABLED:
+        app.state.scheduler_task = asyncio.create_task(_run_inline_scheduler())
     logger.info("ApiRadar backend started successfully")
+
+async def _run_inline_scheduler():
+    """Local development scheduler; Docker uses the dedicated Celery beat service."""
+    status = app.state.scheduler_status
+    await asyncio.sleep(2)
+    next_openapi_diff = asyncio.get_running_loop().time()
+    while True:
+        try:
+            # Run one database-writing scraper at a time; this also avoids
+            # SQLite write-lock contention in local development.
+            results = []
+            for scraper in (
+                _async_run_all_rss_scrapers,
+                _async_run_all_github_scrapers,
+                _async_run_all_changelog_pages,
+            ):
+                try:
+                    results.append(await scraper())
+                except Exception as exc:
+                    results.append(exc)
+            errors = [str(result) for result in results if isinstance(result, Exception)]
+            errors.extend(
+                f"source group {index + 1}: {result['scrapers_failed']} source(s) failed"
+                for index, result in enumerate(results)
+                if isinstance(result, dict) and result.get("scrapers_failed", 0)
+            )
+            status["last_scrape_at"] = datetime.now(timezone.utc).isoformat()
+            status["last_error"] = "; ".join(errors) if errors else None
+            logger.info("Inline scrape cycle completed: %s", results)
+        except asyncio.CancelledError:
+            raise
+        except Exception as exc:
+            status["last_error"] = str(exc)
+            logger.exception("Inline scrape cycle failed")
+        loop = asyncio.get_running_loop()
+        if loop.time() >= next_openapi_diff:
+            try:
+                openapi_result = await _async_run_all_openapi_diffs()
+                status["last_openapi_diff_at"] = datetime.now(timezone.utc).isoformat()
+                if openapi_result.get("apis_failed"):
+                    status["last_error"] = f"{openapi_result['apis_failed']} OpenAPI source(s) failed"
+                next_openapi_diff = loop.time() + max(60, settings.OPENAPI_INTERVAL_SECONDS)
+            except asyncio.CancelledError:
+                raise
+            except Exception as exc:
+                status["last_error"] = str(exc)
+                logger.exception("Inline OpenAPI diff failed")
+        await asyncio.sleep(max(60, settings.SCRAPE_INTERVAL_SECONDS))
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    task = getattr(app.state, "scheduler_task", None)
+    if task:
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
 
 @app.get("/ping")
 async def ping():
     return {"status": "ok", "message": "ApiRadar is alive"}
+
+@app.get("/api/monitoring/status")
+async def monitoring_status():
+    return getattr(app.state, "scheduler_status", {"enabled": False})
 
 @app.post("/admin/test-task", dependencies=[Depends(require_admin_key)])
 async def test_task():

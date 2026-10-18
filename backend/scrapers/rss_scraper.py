@@ -29,7 +29,7 @@ class RSSScraper(BaseScraper):
                 feed_text = response.text
         except Exception as e:
             print(f"Error fetching RSS feed for {self.api.name} ({self.api.rss_feed_url}): {e}")
-            return []
+            raise RuntimeError(f"RSS fetch failed for {self.api.slug}") from e
 
         feed = feedparser.parse(feed_text)
         entries = feed.entries[:20] if feed.entries else []

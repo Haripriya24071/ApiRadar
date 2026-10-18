@@ -51,8 +51,8 @@ async def diff_api_spec(api: APICatalog, db: AsyncSession) -> List[Dict[str, Any
         return []
 
     current_spec = await fetch_spec(api.openapi_spec_url)
-    if not current_spec or not isinstance(current_spec, dict):
-        return []
+    if current_spec is None or not isinstance(current_spec, dict):
+        raise RuntimeError(f"Could not retrieve a valid OpenAPI document for {api.slug}")
 
     # Query latest snapshot
     stmt = (

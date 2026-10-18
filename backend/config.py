@@ -15,6 +15,9 @@ class Settings(BaseSettings):
     GITHUB_TOKEN: str = ""
     RESEND_API_KEY: str = ""
     ADMIN_API_KEY: str = ""
+    INLINE_MONITORING_ENABLED: bool = os.getenv("APP_ENV", "development").lower() not in {"production", "prod"}
+    SCRAPE_INTERVAL_SECONDS: int = 21600
+    OPENAPI_INTERVAL_SECONDS: int = 86400
     ALLOWED_ORIGINS: List[str] = ["http://localhost:5173"]
 
     @field_validator("ALLOWED_ORIGINS", mode="before")

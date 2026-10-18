@@ -7,10 +7,12 @@ from models.api_catalog import APICatalog
 from models.change_event import ChangeEvent
 from scrapers.rss_scraper import RSSScraper
 from scrapers.github_scraper import GitHubReleaseScraper
+from scrapers.changelog_page_scraper import scrape_changelog_page
 from services.notification_service import create_notifications_for_change
 
 async def _async_run_all_rss_scrapers():
     scrapers_run = 0
+    scrapers_failed = 0
     total_changes = 0
 
     async with SessionLocal() as db:
@@ -35,16 +37,44 @@ async def _async_run_all_rss_scrapers():
 
                 api.last_scraped_at = datetime.now(timezone.utc)
             except Exception as e:
+                scrapers_failed += 1
                 print(f"Error running RSS scraper for API {api.slug}: {e}")
 
             await asyncio.sleep(0.5)
 
         await db.commit()
 
-    return {"status": "ok", "scrapers_run": scrapers_run, "changes_found": total_changes}
+    return {"status": "ok", "scrapers_run": scrapers_run, "scrapers_failed": scrapers_failed, "changes_found": total_changes}
+
+async def _async_run_all_changelog_pages():
+    """Poll documentation pages for providers without a usable release feed."""
+    scrapers_run = 0
+    scrapers_failed = 0
+    changes_found = 0
+    async with SessionLocal() as db:
+        result = await db.execute(select(APICatalog).where(
+            APICatalog.changelog_url.isnot(None), APICatalog.changelog_url != "",
+            APICatalog.rss_feed_url.is_(None),
+        ))
+        for api in result.scalars().all():
+            try:
+                changes = await scrape_changelog_page(api, db)
+                scrapers_run += 1
+                for payload in changes:
+                    event = ChangeEvent(**payload)
+                    db.add(event)
+                    await db.commit()
+                    await create_notifications_for_change(event, db)
+                    changes_found += 1
+            except Exception as exc:
+                scrapers_failed += 1
+                print(f"Error monitoring changelog page for {api.slug}: {exc}")
+        await db.commit()
+    return {"status": "ok", "scrapers_run": scrapers_run, "scrapers_failed": scrapers_failed, "changes_found": changes_found}
 
 async def _async_run_all_github_scrapers():
     scrapers_run = 0
+    scrapers_failed = 0
     total_changes = 0
 
     async with SessionLocal() as db:
@@ -69,13 +99,14 @@ async def _async_run_all_github_scrapers():
 
                 api.last_scraped_at = datetime.now(timezone.utc)
             except Exception as e:
+                scrapers_failed += 1
                 print(f"Error running GitHub scraper for API {api.slug}: {e}")
 
             await asyncio.sleep(0.5)
 
         await db.commit()
 
-    return {"status": "ok", "scrapers_run": scrapers_run, "changes_found": total_changes}
+    return {"status": "ok", "scrapers_run": scrapers_run, "scrapers_failed": scrapers_failed, "changes_found": total_changes}
 
 async def _async_scrape_single_api(api_slug: str):
     total_changes = 0
@@ -111,6 +142,18 @@ async def _async_scrape_single_api(api_slug: str):
             except Exception as e:
                 print(f"Error in single GitHub scrape for {api_slug}: {e}")
 
+        if api.changelog_url and not api.rss_feed_url:
+            try:
+                page_changes = await scrape_changelog_page(api, db)
+                for change_data in page_changes:
+                    event = ChangeEvent(**change_data)
+                    db.add(event)
+                    await db.commit()
+                    await create_notifications_for_change(event, db)
+                    total_changes += 1
+            except Exception as e:
+                print(f"Error monitoring changelog page for {api_slug}: {e}")
+
         api.last_scraped_at = datetime.now(timezone.utc)
         await db.commit()
 
@@ -137,13 +180,24 @@ def run_all_github_scrapers():
 @celery_app.task
 def run_all_scrapers():
     print("Run all scrapers combined task triggered")
-    rss_task = run_all_rss_scrapers.delay()
-    gh_task = run_all_github_scrapers.delay()
-    return {
-        "status": "both scraper tasks queued",
-        "rss_task_id": rss_task.id,
-        "github_task_id": gh_task.id
-    }
+    async def _run():
+        rss = await _async_run_all_rss_scrapers()
+        github = await _async_run_all_github_scrapers()
+        pages = await _async_run_all_changelog_pages()
+        return {"status": "ok", "rss": rss, "github": github, "pages": pages}
+    try:
+        return asyncio.run(_run())
+    except Exception as e:
+        print(f"Fatal error in run_all_scrapers: {e}")
+        return {"status": "error", "message": str(e)}
+
+@celery_app.task
+def run_all_changelog_pages():
+    try:
+        return asyncio.run(_async_run_all_changelog_pages())
+    except Exception as e:
+        print(f"Fatal error monitoring changelog pages: {e}")
+        return {"status": "error", "message": str(e)}
 
 @celery_app.task
 def scrape_single_api(api_slug: str):

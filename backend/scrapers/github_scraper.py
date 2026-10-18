@@ -36,16 +36,14 @@ class GitHubReleaseScraper(BaseScraper):
             async with httpx.AsyncClient(timeout=10.0, follow_redirects=True) as client:
                 response = await client.get(url, headers=headers)
                 if response.status_code == 404:
-                    print(f"GitHub repository not found: {repo}")
-                    return []
+                    raise RuntimeError(f"GitHub repository not found: {repo}")
                 elif response.status_code == 403:
-                    print(f"GitHub API rate limit exceeded or forbidden for repo: {repo}")
-                    return []
+                    raise RuntimeError(f"GitHub API rate limit exceeded or forbidden for repo: {repo}")
                 response.raise_for_status()
                 releases = response.json()
         except Exception as e:
             print(f"Error fetching GitHub releases for {self.api.name} ({repo}): {e}")
-            return []
+            raise RuntimeError(f"GitHub releases fetch failed for {self.api.slug}") from e
 
         if not isinstance(releases, list):
             return []
