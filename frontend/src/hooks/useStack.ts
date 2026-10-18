@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { apisAPI, stacksAPI } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
 import { APIBase, APICatalog } from '../types'
+import { mapPackageToApiSlug } from '../lib/packageParser'
 
 const GUEST_STACK_KEY = 'apiradar_guest_stack'
 const GUEST_STACK_ID = 'guest-local-stack'
@@ -155,29 +156,22 @@ export function useStack() {
         devDependencies?: Record<string, string>
       }
       const dependencies = { ...content.dependencies, ...content.devDependencies }
-      const mappings: Record<string, string> = {
-        stripe: 'stripe',
-        '@stripe/stripe-js': 'stripe',
-        openai: 'openai',
-        '@supabase/supabase-js': 'supabase',
-        twilio: 'twilio',
-        '@sendgrid/mail': 'sendgrid',
-        '@octokit/rest': 'github',
-        octokit: 'github',
-      }
       const catalog = await apisAPI.list()
       const watchedIds = new Set((readGuestStack()?.watched_apis || []).map((item) => item.api_id))
       const seen = new Set<string>()
 
       return Object.entries(dependencies)
         .flatMap(([packageName, version]) => {
-          const slug = mappings[packageName.toLowerCase()]
+          const slug = mapPackageToApiSlug(packageName)
           const api = catalog.find((item) => item.slug === slug)
           if (!api || seen.has(api.id)) return []
           seen.add(api.id)
+          const versionSpec = String(version).trim()
           return [{
             api,
-            sdk_version: `${packageName}@${String(version).trim().replace(/^[^\w]*/, '')}`,
+            sdk_version: versionSpec
+              ? `${packageName}@${versionSpec.replace(/^[^\w]*/, '')}`
+              : packageName,
             already_watching: watchedIds.has(api.id),
           }]
         })

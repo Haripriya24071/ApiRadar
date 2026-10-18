@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react'
 import { Upload, FileCode, Check, AlertCircle, Loader2, Plus, Sparkles, XCircle } from 'lucide-react'
 import { useStack, ParsedAPIMatch } from '../../hooks/useStack'
-import { readFileAsText, parsePackageJSON } from '../../lib/packageParser'
+import { readFileAsText, parseDependencyFile } from '../../lib/packageParser'
 import { useToast } from '../../store/toastStore'
 import { getErrorMessage } from '../../lib/api'
 
@@ -27,18 +27,18 @@ export default function PackageUploader({ stackId, onAPIsAdded }: PackageUploade
     setSuccessMsg(null)
     setMatchedAPIs(null)
 
-    if (!file.name.toLowerCase().endsWith('.json')) {
-      setError('Invalid file type. Please upload a .json file (e.g., package.json).')
+    if (!/\.(json|txt)$/i.test(file.name)) {
+      setError('Choose a package.json or requirements.txt file.')
       return
     }
 
     try {
       const textContent = await readFileAsText(file)
-      const parsedJSON = parsePackageJSON(textContent)
+      const parsedDependencies = parseDependencyFile(file.name, textContent)
 
       const results = await parsePackage.mutateAsync({
         stackId,
-        packageJson: parsedJSON,
+        packageJson: parsedDependencies,
       })
 
       setMatchedAPIs(results)
@@ -53,7 +53,7 @@ export default function PackageUploader({ stackId, onAPIsAdded }: PackageUploade
       })
       setSelectedApiIds(initialSelected)
     } catch (err: any) {
-      console.error('Failed to parse package.json:', err)
+      console.error('Failed to parse project dependencies:', err)
       const msg = getErrorMessage(err)
       setError(msg)
       toast.error(msg)
@@ -162,7 +162,7 @@ export default function PackageUploader({ stackId, onAPIsAdded }: PackageUploade
         <div>
           <h2 className="text-lg font-semibold text-white flex items-center gap-2">
             <FileCode className="w-5 h-5 text-primary" />
-            Upload package.json
+            Upload project dependencies
           </h2>
           <p className="text-xs text-muted mt-0.5">
             Automatically detect and track API dependencies in your project
@@ -209,7 +209,7 @@ export default function PackageUploader({ stackId, onAPIsAdded }: PackageUploade
           <input
             ref={fileInputRef}
             type="file"
-            accept=".json"
+            accept="package.json,requirements.txt,.json,.txt"
             onChange={handleFileSelect}
             className="hidden"
           />
@@ -218,7 +218,7 @@ export default function PackageUploader({ stackId, onAPIsAdded }: PackageUploade
             <div className="flex flex-col items-center gap-2 py-4">
               <Loader2 className="w-10 h-10 text-primary animate-spin" />
               <p className="text-sm font-medium text-slate-200">
-                Parsing package.json & matching against API catalog...
+                Parsing dependencies & matching against API catalog...
               </p>
             </div>
           ) : (
@@ -228,10 +228,10 @@ export default function PackageUploader({ stackId, onAPIsAdded }: PackageUploade
               </div>
               <div>
                 <p className="text-sm font-medium text-slate-200">
-                  Drag & drop your <code className="text-primary font-mono">package.json</code> file here
+                  Drag & drop <code className="text-primary font-mono">package.json</code> or <code className="text-primary font-mono">requirements.txt</code> here
                 </p>
                 <p className="text-xs text-muted mt-1">
-                  or <span className="text-primary underline">click to browse</span> from your computer (.json files only)
+                  or <span className="text-primary underline">click to browse</span> for a supported dependency file
                 </p>
               </div>
             </>
@@ -264,7 +264,7 @@ export default function PackageUploader({ stackId, onAPIsAdded }: PackageUploade
 
           {matchedAPIs.length === 0 ? (
             <div className="text-center py-6 text-muted text-sm border border-border rounded-lg bg-background/50">
-              No known APIs matched from your package.json dependencies.
+              No known APIs matched. Only SDKs for APIs in the ApiRadar catalog can be detected from dependency files.
             </div>
           ) : (
             <div className="space-y-2 max-h-80 overflow-y-auto pr-1">

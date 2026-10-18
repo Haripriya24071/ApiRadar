@@ -4,11 +4,17 @@ KNOWN_MAPPINGS = {
     "stripe": "stripe",
     "@stripe/stripe-js": "stripe",
     "openai": "openai",
+    "groq": "groq",
+    "langchain-groq": "groq",
     "@supabase/supabase-js": "supabase",
+    "supabase": "supabase",
+    "supabase-py": "supabase",
     "twilio": "twilio",
     "@sendgrid/mail": "sendgrid",
+    "sendgrid": "sendgrid",
     "@octokit/rest": "github",
-    "octokit": "github"
+    "octokit": "github",
+    "pygithub": "github",
 }
 
 def parse_package_json(content: Dict[str, Any]) -> List[Tuple[str, str]]:
@@ -36,7 +42,7 @@ def match_apis_to_catalog(packages: List[Tuple[str, str]], catalog_apis: List[An
         slug = KNOWN_MAPPINGS.get(pkg_name.lower())
         if slug and slug in catalog_by_slug and slug not in seen_slugs:
             api_obj = catalog_by_slug[slug]
-            clean_ver = ver_str.strip().lstrip("^~=>")
+            clean_ver = ver_str.strip()
             sdk_ver = f"{pkg_name}@{clean_ver}" if clean_ver else pkg_name
             matched_results.append({
                 "api": api_obj,

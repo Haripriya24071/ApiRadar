@@ -3,6 +3,7 @@ import { useStack } from '../hooks/useStack'
 import { apisAPI } from '../lib/api'
 import { useToast } from '../store/toastStore'
 import { useAuthStore } from '../store/authStore'
+import { mapPackageToApiSlug, parseDependencyFile } from '../lib/packageParser'
 
 interface DetectedApiItem {
   id: string
@@ -37,28 +38,17 @@ export default function MyStack() {
     return currentStack.id
   }
 
-  // Parse package.json content to detect known APIs
-  const parsePackageJson = async (text: string) => {
+  // Read project dependencies and match known SDKs against the ApiRadar catalog.
+  const parseDependencyList = async (fileName: string, text: string) => {
     try {
-      const json = JSON.parse(text)
-      const deps = { ...json.dependencies, ...json.devDependencies }
+      const parsed = parseDependencyFile(fileName, text)
+      const deps = { ...parsed.dependencies, ...parsed.devDependencies }
 
       const allApis = await apisAPI.list()
       const detected: DetectedApiItem[] = []
 
-      // Mapping package names to API slugs
-      const pkgMapping: Record<string, string> = {
-        stripe: 'stripe',
-        openai: 'openai',
-        '@supabase/supabase-js': 'supabase',
-        twilio: 'twilio',
-        '@octokit/rest': 'github',
-        octokit: 'github',
-        '@sendgrid/mail': 'sendgrid',
-      }
-
       Object.entries(deps).forEach(([pkgName, versionStr]) => {
-        const targetSlug = pkgMapping[pkgName.toLowerCase()]
+        const targetSlug = mapPackageToApiSlug(pkgName)
         if (targetSlug) {
           const matchingApi = allApis.find((a: any) => a.slug === targetSlug)
           if (matchingApi) {
@@ -67,7 +57,7 @@ export default function MyStack() {
               name: matchingApi.name,
               slug: matchingApi.slug,
               category: matchingApi.category || 'Third-Party Service',
-              version: String(versionStr),
+              version: String(versionStr || 'not pinned'),
               selected: true,
             })
           }
@@ -75,13 +65,13 @@ export default function MyStack() {
       })
 
       if (detected.length === 0) {
-        toast.info('No matching ApiRadar APIs found in package.json dependencies.')
+        toast.info(`Scanned ${Object.keys(deps).length} dependencies in ${fileName}; none matched a currently tracked API SDK.`)
       } else {
         setDetectedApis(detected)
-        toast.success(`Detected ${detected.length} APIs in package.json!`)
+        toast.success(`Detected ${detected.length} tracked API SDKs in ${fileName}!`)
       }
     } catch (err) {
-      toast.error('Invalid package.json format.')
+      toast.error(err instanceof Error ? err.message : 'Could not parse the dependency file.')
     }
   }
 
@@ -91,7 +81,7 @@ export default function MyStack() {
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       const file = e.dataTransfer.files[0]
       const text = await file.text()
-      await parsePackageJson(text)
+      await parseDependencyList(file.name, text)
     }
   }
 
@@ -99,7 +89,7 @@ export default function MyStack() {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0]
       const text = await file.text()
-      await parsePackageJson(text)
+      await parseDependencyList(file.name, text)
     }
   }
 
@@ -163,7 +153,7 @@ export default function MyStack() {
         <input
           ref={fileInputRef}
           type="file"
-          accept=".json"
+          accept="package.json,requirements.txt,.json,.txt"
           onChange={handleFileSelect}
           className="hidden"
         />
@@ -187,10 +177,13 @@ export default function MyStack() {
             +
           </div>
           <div className="font-['Space_Mono'] text-[11px] text-[var(--muted-dark)] tracking-[0.2em] uppercase">
-            DROP PACKAGE.JSON HERE
+            DROP PACKAGE.JSON OR REQUIREMENTS.TXT HERE
           </div>
           <div className="font-['Space_Mono'] text-[10px] text-[var(--muted-dark)] opacity-60 tracking-[0.1em] uppercase mt-2">
             OR CLICK TO BROWSE
+          </div>
+          <div className="font-['Space_Mono'] text-[9px] text-[var(--muted-dark)] tracking-[0.08em] uppercase mt-4 max-w-2xl mx-auto">
+            Detects known SDK dependencies only; it does not inspect source code or predict API changes.
           </div>
         </div>
       </div>

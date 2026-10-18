@@ -66,6 +66,7 @@ export default function Navbar() {
   const apis = [
     { name: 'Stripe API', slug: 'stripe', category: 'Payments & Financial Infrastructure' },
     { name: 'OpenAI API', slug: 'openai', category: 'AI & Machine Learning Models' },
+    { name: 'Groq API', slug: 'groq', category: 'AI & Machine Learning Models' },
     { name: 'Supabase API', slug: 'supabase', category: 'Backend-as-a-Service & Database' },
     { name: 'Twilio API', slug: 'twilio', category: 'Communications & Telephony' },
     { name: 'GitHub REST API', slug: 'github', category: 'Version Control & Developer Tools' },

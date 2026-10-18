@@ -1,7 +1,4 @@
-/**
- * Parses package.json string content, extracting dependencies and devDependencies,
- * and returning the full parsed object to send to backend.
- */
+/** Parses package.json content into a consistent dependency object. */
 export function parsePackageJSON(fileContent: string): Record<string, any> {
   let parsed: any
   try {
@@ -29,6 +26,62 @@ export function parsePackageJSON(fileContent: string): Record<string, any> {
     dependencies,
     devDependencies,
   }
+}
+
+/**
+ * Parse the direct requirements in a Python requirements.txt file.
+ * Include pins/specifiers as dependency versions; skip pip directives and comments.
+ */
+export function parseRequirementsTXT(fileContent: string): Record<string, any> {
+  const dependencies: Record<string, string> = {}
+
+  for (const rawLine of fileContent.split(/\r?\n/)) {
+    const line = rawLine.replace(/\s+#.*$/, '').trim()
+    if (!line || line.startsWith('#') || line.startsWith('-')) continue
+
+    // requirements.txt supports environment markers after a semicolon.
+    const requirement = line.split(';', 1)[0].trim()
+    const match = requirement.match(/^([A-Za-z0-9][A-Za-z0-9._-]*)(?:\[[^\]]+\])?\s*(.*)$/)
+    if (!match) continue
+
+    const packageName = match[1]
+    const specifier = match[2].trim()
+    dependencies[packageName] = specifier
+  }
+
+  if (Object.keys(dependencies).length === 0) {
+    throw new Error('No direct Python dependencies found in requirements.txt.')
+  }
+
+  return { dependencies, devDependencies: {} }
+}
+
+/** Parse either supported project dependency file based on its filename. */
+export function parseDependencyFile(fileName: string, fileContent: string): Record<string, any> {
+  if (fileName.toLowerCase().endsWith('.txt')) return parseRequirementsTXT(fileContent)
+  if (fileName.toLowerCase().endsWith('.json')) return parsePackageJSON(fileContent)
+  throw new Error('Choose a package.json or requirements.txt file.')
+}
+
+const PACKAGE_API_MAPPINGS: Record<string, string> = {
+  stripe: 'stripe',
+  '@stripe/stripe-js': 'stripe',
+  openai: 'openai',
+  groq: 'groq',
+  'langchain-groq': 'groq',
+  '@supabase/supabase-js': 'supabase',
+  supabase: 'supabase',
+  'supabase-py': 'supabase',
+  twilio: 'twilio',
+  '@sendgrid/mail': 'sendgrid',
+  sendgrid: 'sendgrid',
+  '@octokit/rest': 'github',
+  octokit: 'github',
+  pygithub: 'github',
+}
+
+export function mapPackageToApiSlug(packageName: string): string | undefined {
+  return PACKAGE_API_MAPPINGS[packageName.trim().toLowerCase()]
 }
 
 /**

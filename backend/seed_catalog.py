@@ -26,6 +26,16 @@ INITIAL_APIS = [
         "logo_url": "https://logo.clearbit.com/openai.com",
     },
     {
+        "name": "Groq",
+        "slug": "groq",
+        "category": "ai-ml",
+        "changelog_url": "https://console.groq.com/docs/changelog",
+        "rss_feed_url": None,
+        "github_repo": "groq/groq-python",
+        "openapi_spec_url": None,
+        "logo_url": "https://logo.clearbit.com/groq.com",
+    },
+    {
         "name": "Supabase",
         "slug": "supabase",
         "category": "database",
@@ -67,7 +77,7 @@ INITIAL_APIS = [
     },
 ]
 
-async def seed():
+async def seed(skip_scrape: bool = False):
     await init_db()
     seeded_count = 0
     async with SessionLocal() as db:
@@ -82,14 +92,25 @@ async def seed():
                 seeded_count += 1
         await db.commit()
 
-    # Trigger immediate scrape for RSS and GitHub sources
-    try:
-        await _async_run_all_rss_scrapers()
-        await _async_run_all_github_scrapers()
-    except Exception as e:
-        print(f"Notice: Initial scrape completed with message: {e}")
+    if not skip_scrape:
+        # Trigger immediate scrape for RSS and GitHub sources
+        try:
+            await _async_run_all_rss_scrapers()
+            await _async_run_all_github_scrapers()
+        except Exception as e:
+            print(f"Notice: Initial scrape completed with message: {e}")
 
-    print(f"Seeded {seeded_count} APIs and triggered initial scrape")
+    suffix = "" if skip_scrape else " and triggered initial scrape"
+    print(f"Seeded {seeded_count} APIs{suffix}")
 
 if __name__ == "__main__":
-    asyncio.run(seed())
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Seed the API catalog")
+    parser.add_argument(
+        "--skip-scrape",
+        action="store_true",
+        help="Seed catalog rows without contacting changelog or GitHub sources",
+    )
+    args = parser.parse_args()
+    asyncio.run(seed(skip_scrape=args.skip_scrape))
