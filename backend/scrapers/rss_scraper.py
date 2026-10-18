@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.change_event import ChangeEvent
 from scrapers.base import BaseScraper, RawChange
+from services.content_sanitizer import clean_source_text, improve_rss_title
 
 def _struct_time_to_datetime(st) -> Optional[datetime]:
     if not st:
@@ -37,8 +38,9 @@ class RSSScraper(BaseScraper):
 
         for entry in entries:
             link = entry.get("link") or entry.get("id") or ""
-            title = entry.get("title", "Untitled Change")
-            content = entry.get("summary") or entry.get("description") or title
+            raw_title = entry.get("title", "Untitled Change")
+            content = clean_source_text(entry.get("summary") or entry.get("description") or raw_title)
+            title = improve_rss_title(raw_title, content)
             published_parsed = entry.get("published_parsed") or entry.get("updated_parsed")
             published_at = _struct_time_to_datetime(published_parsed)
 

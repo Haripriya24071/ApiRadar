@@ -8,6 +8,9 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from config import settings
 from database import init_db
+from database import SessionLocal
+from sqlalchemy import select
+from models.change_event import ChangeEvent
 from routers import auth, stacks, changes, apis, notifications
 from dependencies import require_admin_key
 from tasks.scraper_tasks import (
@@ -21,6 +24,7 @@ from tasks.scraper_tasks import (
 )
 from tasks.diff_tasks import _async_run_all_openapi_diffs
 from seed_catalog import seed as seed_catalog
+from services.content_sanitizer import clean_source_text, classify_change_severity, improve_rss_title
 
 # Configure logging to console and file
 os.makedirs("logs", exist_ok=True)
@@ -85,6 +89,7 @@ app.include_router(notifications.router, prefix="/api")
 async def startup_event():
     await init_db()
     await seed_catalog(skip_scrape=True)
+    await _normalize_existing_change_events()
     app.state.scheduler_task = None
     app.state.scheduler_status = {
         "enabled": settings.INLINE_MONITORING_ENABLED,
@@ -95,6 +100,31 @@ async def startup_event():
     if settings.INLINE_MONITORING_ENABLED:
         app.state.scheduler_task = asyncio.create_task(_run_inline_scheduler())
     logger.info("ApiRadar backend started successfully")
+
+async def _normalize_existing_change_events():
+    """Clean legacy scrape payloads and recheck auto-classified source severity."""
+    async with SessionLocal() as db:
+        result = await db.execute(select(ChangeEvent).where(
+            ChangeEvent.source.in_(["rss", "github_release"])
+        ))
+        for event in result.scalars().all():
+            previous_title = event.title
+            previous_summary = event.what_changed
+            previous_migration = event.migration_summary
+            event.title = clean_source_text(event.title)[:500] or "Provider update"
+            event.what_changed = clean_source_text(event.what_changed)[:5000] or None
+            event.migration_summary = clean_source_text(event.migration_summary)[:5000] or None
+            if event.source == "rss":
+                event.title = improve_rss_title(event.title, event.what_changed or "")
+            event.severity = classify_change_severity(
+                "\n".join((event.title, event.what_changed or "", event.raw_content or "")),
+                event.severity,
+            )
+            if (event.title, event.what_changed, event.migration_summary) != (
+                previous_title, previous_summary, previous_migration
+            ):
+                db.add(event)
+        await db.commit()
 
 async def _run_inline_scheduler():
     """Local development scheduler; Docker uses the dedicated Celery beat service."""

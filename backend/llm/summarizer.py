@@ -4,6 +4,7 @@ from typing import List, Dict, Any, Optional
 from openai import AsyncOpenAI
 from config import settings
 from llm.cache import LLMCache
+from services.content_sanitizer import classify_change_severity
 
 cache = LLMCache()
 
@@ -27,7 +28,7 @@ async def summarize_change(raw) -> List[Dict[str, Any]]:
             severity = str(item.get("severity", "INFO")).upper()
             endpoints = item.get("affected_endpoints")
             normalized_cached.append({
-                "severity": severity if severity in {"CRITICAL", "WARNING", "INFO"} else "INFO",
+                "severity": classify_change_severity(raw.title + "\n" + raw.content, severity),
                 "title": str(item.get("title") or raw.title)[:100],
                 "what_changed": item.get("what_changed")[:5000] if isinstance(item.get("what_changed"), str) else raw.content[:5000],
                 "affected_endpoints": [value.strip()[:500] for value in endpoints if isinstance(value, str) and value.strip()][:100] if isinstance(endpoints, list) else [],
@@ -38,14 +39,7 @@ async def summarize_change(raw) -> List[Dict[str, Any]]:
         return normalized_cached
 
     def build_fallback(severity: str = "INFO") -> List[Dict[str, Any]]:
-        content_lower = (raw.title + " " + raw.content).lower()
-        if "deprecated" in content_lower:
-            sev = "WARNING"
-        elif "breaking" in content_lower or "removed" in content_lower:
-            sev = "CRITICAL"
-        else:
-            sev = severity
-
+        sev = classify_change_severity(raw.title + "\n" + raw.content, severity)
         res = [{
             "severity": sev,
             "title": raw.title[:100],
@@ -149,7 +143,7 @@ async def summarize_change(raw) -> List[Dict[str, Any]]:
             effort_estimate = item.get("effort_estimate")
 
             change_dict = {
-                "severity": severity,
+            "severity": classify_change_severity(raw.title + "\n" + raw.content, severity),
                 "title": str(item.get("title", raw.title))[:100],
                 "what_changed": (item.get("what_changed")[:5000] if isinstance(item.get("what_changed"), str) and item.get("what_changed") else raw.content[:5000]),
                 "affected_endpoints": endpoints,

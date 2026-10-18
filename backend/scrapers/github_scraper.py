@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from config import settings
 from models.change_event import ChangeEvent
 from scrapers.base import BaseScraper, RawChange
+from services.content_sanitizer import clean_source_text
 
 def _parse_iso_datetime(dt_str: Optional[str]) -> Optional[datetime]:
     if not dt_str:
@@ -59,8 +60,8 @@ class GitHubReleaseScraper(BaseScraper):
             published_at = _parse_iso_datetime(pub_str)
 
             html_url = release.get("html_url") or ""
-            title = release.get("name") or release.get("tag_name") or f"{self.api.name} Release"
-            body = release.get("body") or title
+            title = clean_source_text(release.get("name") or release.get("tag_name") or f"{self.api.name} Release")
+            body = clean_source_text(release.get("body") or title)
 
             if html_url:
                 stmt = select(ChangeEvent).where(
