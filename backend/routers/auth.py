@@ -156,9 +156,11 @@ async def _google_profile(code: str, nonce: str) -> tuple[str, str]:
             },
         )
         token_response.raise_for_status()
-        id_token = token_response.json().get("id_token")
-        if not id_token:
-            raise ValueError("Google did not return an identity token")
+        token_payload = token_response.json()
+        id_token = token_payload.get("id_token")
+        access_token = token_payload.get("access_token")
+        if not id_token or not access_token:
+            raise ValueError("Google did not return the tokens required to validate this sign-in")
         header = jose_jwt.get_unverified_header(id_token)
         if header.get("alg") != "RS256" or not header.get("kid"):
             raise ValueError("Google identity token used an unsupported signing key")
@@ -173,6 +175,7 @@ async def _google_profile(code: str, nonce: str) -> tuple[str, str]:
             signing_key,
             algorithms=["RS256"],
             audience=settings.GOOGLE_CLIENT_ID,
+            access_token=access_token,
             options={"verify_iss": False},
         )
         if claims.get("iss") not in {"accounts.google.com", "https://accounts.google.com"}:
