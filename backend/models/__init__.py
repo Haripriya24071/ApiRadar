@@ -4,6 +4,7 @@ from models.stack_profile import StackProfile, WatchedAPI
 from models.change_event import ChangeEvent
 from models.openapi_snapshot import OpenAPISnapshot
 from models.notification import Notification
+from models.forecast_notification import ForecastNotification
 from models.resolved_change import UserResolvedChange
 from models.changelog_snapshot import ChangelogSnapshot
 from models.oauth_identity import OAuthIdentity
@@ -17,6 +18,7 @@ __all__ = [
     "ChangeEvent",
     "OpenAPISnapshot",
     "Notification",
+    "ForecastNotification",
     "UserResolvedChange",
     "ChangelogSnapshot",
     "OAuthIdentity",
