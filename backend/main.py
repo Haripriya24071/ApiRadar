@@ -11,7 +11,7 @@ from database import init_db
 from database import SessionLocal
 from sqlalchemy import select
 from models.change_event import ChangeEvent
-from routers import auth, stacks, changes, apis, notifications
+from routers import auth, stacks, changes, apis, notifications, forecasts
 from dependencies import require_admin_key
 from tasks.scraper_tasks import (
     run_all_scrapers,
@@ -84,6 +84,7 @@ app.include_router(stacks.router, prefix="/api")
 app.include_router(changes.router, prefix="/api")
 app.include_router(apis.router, prefix="/api")
 app.include_router(notifications.router, prefix="/api")
+app.include_router(forecasts.router, prefix="/api")
 
 @app.on_event("startup")
 async def startup_event():

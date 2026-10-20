@@ -6,6 +6,8 @@ from models.openapi_snapshot import OpenAPISnapshot
 from models.notification import Notification
 from models.resolved_change import UserResolvedChange
 from models.changelog_snapshot import ChangelogSnapshot
+from models.oauth_identity import OAuthIdentity
+from models.login_device import LoginDevice
 
 __all__ = [
     "User",
@@ -17,4 +19,6 @@ __all__ = [
     "Notification",
     "UserResolvedChange",
     "ChangelogSnapshot",
+    "OAuthIdentity",
+    "LoginDevice",
 ]

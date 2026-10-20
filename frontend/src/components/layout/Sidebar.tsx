@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
-import { Rss, Layers, Globe, Settings as SettingsIcon, LogOut, LogIn } from 'lucide-react'
+import { Rss, Layers, Globe, Settings as SettingsIcon, LogOut, LogIn, Radar } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 
 export default function Sidebar() {
@@ -10,6 +10,7 @@ export default function Sidebar() {
 
   const navItems = [
     { to: '/dashboard/feed', icon: Rss, label: 'FEED' },
+    { to: '/dashboard/forecast', icon: Radar, label: 'FORECAST' },
     { to: '/dashboard/stack', icon: Layers, label: 'STACK' },
     { to: '/dashboard/apis', icon: Globe, label: 'APIS' },
     { to: '/dashboard/settings', icon: SettingsIcon, label: 'SETTINGS' },

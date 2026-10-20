@@ -14,6 +14,13 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str = ""
     GITHUB_TOKEN: str = ""
     RESEND_API_KEY: str = ""
+    EMAIL_FROM: str = ""
+    GOOGLE_CLIENT_ID: str = ""
+    GOOGLE_CLIENT_SECRET: str = ""
+    GITHUB_CLIENT_ID: str = ""
+    GITHUB_CLIENT_SECRET: str = ""
+    FRONTEND_BASE_URL: str = "http://localhost:5173"
+    BACKEND_BASE_URL: str = "http://localhost:8000"
     ADMIN_API_KEY: str = ""
     INLINE_MONITORING_ENABLED: bool = os.getenv("APP_ENV", "development").lower() not in {"production", "prod"}
     SCRAPE_INTERVAL_SECONDS: int = 21600

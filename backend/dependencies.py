@@ -2,6 +2,7 @@ import uuid
 import hmac
 from typing import Optional
 from fastapi import Depends, HTTPException, Header, status
+from fastapi import Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -22,12 +23,13 @@ async def require_admin_key(x_admin_key: Optional[str] = Header(default=None)) -
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid admin key")
 
 async def get_optional_user(
+    request: Request,
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(security_optional),
     db: AsyncSession = Depends(get_db)
 ) -> Optional[User]:
-    if not credentials:
+    token = credentials.credentials if credentials else (request.cookies.get("apiradar_session") if request else None)
+    if not token:
         return None
-    token = credentials.credentials
     payload = decode_access_token(token)
     if payload is None:
         return None
@@ -42,7 +44,8 @@ async def get_optional_user(
     return result.scalar_one_or_none()
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    request: Request,
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security_optional),
     db: AsyncSession = Depends(get_db)
 ) -> User:
     credentials_exception = HTTPException(
@@ -51,7 +54,9 @@ async def get_current_user(
         headers={"WWW-Authenticate": "Bearer"},
     )
     
-    token = credentials.credentials
+    token = credentials.credentials if credentials else (request.cookies.get("apiradar_session") if request else None)
+    if not token:
+        raise credentials_exception
     payload = decode_access_token(token)
     if payload is None:
         raise credentials_exception

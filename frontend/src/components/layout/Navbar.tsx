@@ -62,6 +62,7 @@ export default function Navbar() {
   const getBreadcrumb = () => {
     const path = location.pathname
     if (path.includes('/dashboard/feed')) return '00_1 · CHANGE FEED'
+    if (path.includes('/dashboard/forecast')) return '00_2 · 90-DAY FORECAST'
     if (path.includes('/dashboard/stack')) return '00_2 · MY STACK'
     if (path.includes('/dashboard/apis')) return '00_3 · BROWSE APIS'
     if (path.includes('/dashboard/settings')) return '00_4 · SETTINGS'

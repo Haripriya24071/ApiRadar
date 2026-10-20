@@ -3,11 +3,23 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useToast } from '../store/toastStore'
 import { getErrorMessage } from '../lib/api'
+import OAuthButtons from '../components/auth/OAuthButtons'
 
 export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(() => {
+    const code = new URLSearchParams(window.location.search).get('auth_error')
+    if (!code) return null
+    const messages: Record<string, string> = {
+      google_not_configured: 'Google sign-in is not configured yet.',
+      github_not_configured: 'GitHub sign-in is not configured yet.',
+      google_cancelled: 'Google sign-in was cancelled.',
+      github_cancelled: 'GitHub sign-in was cancelled.',
+      oauth_state_invalid: 'That sign-in attempt expired. Please try again.',
+    }
+    return messages[code] || 'Sign-in could not be completed. Please try again.'
+  })
   const [loading, setLoading] = useState(false)
 
   const { login } = useAuth()
@@ -89,6 +101,8 @@ export default function Login() {
             {loading ? 'AUTHENTICATING...' : 'SIGN IN →'}
           </button>
         </form>
+
+        <OAuthButtons />
 
         <p className="mt-8 text-center text-xs font-['Space_Mono'] text-[var(--muted-light)]">
           DON'T HAVE AN ACCOUNT?{' '}

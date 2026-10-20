@@ -9,7 +9,7 @@ export function useAuth() {
 
   const login = async (email: string, password: string) => {
     const res = await authAPI.login({ email, password })
-    setAuth(res.user, res.access_token)
+    setAuth(res.user)
     await syncGuestStack()
     return res.user
   }
@@ -38,7 +38,15 @@ export function useAuth() {
     return await login(email, password)
   }
 
+  const completeOAuth = async () => {
+    const authenticatedUser = await authAPI.me()
+    setAuth(authenticatedUser)
+    await syncGuestStack()
+    return authenticatedUser
+  }
+
   const logout = () => {
+    void authAPI.logout().catch(() => undefined)
     clearAuth()
     navigate('/dashboard/feed')
   }
@@ -49,5 +57,6 @@ export function useAuth() {
     login,
     logout,
     register,
+    completeOAuth,
   }
 }

@@ -27,6 +27,9 @@ def hash_password(plain: str) -> str:
     return f"{_PASSWORD_HASH_PREFIX}${_PASSWORD_HASH_ROUNDS}${salt_text}${digest_text}"
 
 def verify_password(plain: str, hashed: str) -> bool:
+    # OAuth-only accounts have no password credential to verify.
+    if hashed.startswith("oauth$"):
+        return False
     if hashed.startswith(f"{_PASSWORD_HASH_PREFIX}$"):
         try:
             prefix, algorithm, rounds_text, salt_text, digest_text = hashed.split("$", 4)

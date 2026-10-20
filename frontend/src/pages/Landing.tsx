@@ -147,17 +147,17 @@ export default function Landing() {
         <div className="forecast-orbit" aria-hidden="true"><span /><span /><span /><span /></div>
         <div className="forecast-copy">
           <div className="eyebrow"><WandSparkles size={14} /> 03 / THE BIGGER VISION</div>
-          <div className="forecast-kicker">AIMING FOR A <b>90-DAY</b> HEAD START</div>
+          <div className="forecast-kicker">EXPERIMENTAL <b>90-DAY</b> OUTLOOK</div>
           <h2>See the risk<br />on the horizon.</h2>
-          <p>ApiRadar’s ambition is to forecast likely API changes up to three months ahead, using signals that emerge before a breaking release. That forecasting capability is <strong>not live yet</strong>.</p>
-          <div className="forecast-status"><span className="status-dash" /> TODAY: TRACKING OFFICIAL, PUBLISHED CHANGES <span className="status-next">FORECASTING: FUTURE CAPABILITY</span></div>
+          <p>ApiRadar estimates the chance of another warning or breaking-change signal within 90 days, using each provider’s sourced history. It is an <strong>early, experimental estimate</strong>, not a claim about an unpublished endpoint or roadmap.</p>
+          <div className="forecast-status"><span className="status-dash" /> EVIDENCE-LINKED RISK ESTIMATES <span className="status-next">LOW-DATA APIS ARE HELD BACK</span></div>
         </div>
         <div className="forecast-visual" aria-label="Illustrative timeline from early signals toward a possible future change">
-          <div className="forecast-window"><div className="forecast-window-head"><span>HORIZON / 90 DAYS</span><span className="forecast-badge">VISION · NOT LIVE</span></div>
+          <div className="forecast-window"><div className="forecast-window-head"><span>HORIZON / 90 DAYS</span><span className="forecast-badge">EXPERIMENTAL · LIVE</span></div>
             <div className="forecast-track"><span className="track-past" /><span className="track-future" /><i className="track-now" /><i className="track-target" /></div>
             <div className="forecast-dates"><span>NOW</span><span>EARLY SIGNALS</span><span>UP TO 3 MONTHS</span></div>
-            <div className="forecast-placeholder"><div className="placeholder-icon"><Radar size={25} /></div><div><b>Future risk forecast</b><span>Illustrative concept — no prediction generated</span></div><span className="placeholder-lock">IN DEVELOPMENT</span></div>
-            <div className="forecast-window-foot"><span>FORECAST CONFIDENCE</span><span>— &nbsp; NOT AVAILABLE</span></div>
+            <div className="forecast-placeholder"><div className="placeholder-icon"><Radar size={25} /></div><div><b>Evidence-linked risk outlook</b><span>Open the forecast page to see each API’s evidence and confidence</span></div><span className="placeholder-lock">OPEN OUTLOOK →</span></div>
+            <div className="forecast-window-foot"><span>LOW-DATA PROVIDERS</span><span>HELD BACK · NEVER GUESSED</span></div>
           </div>
           <span className="forecast-side-note">THE GOAL IS TO SURFACE A SIGNAL BEFORE THE CHANGE IS ANNOUNCED.</span>
         </div>
@@ -190,10 +190,11 @@ export default function Landing() {
         <div className="closing-spark" aria-hidden="true">✳</div>
         <div className="eyebrow">READY WHEN YOU ARE / NO ACCOUNT REQUIRED</div>
         <h2>Keep your eyes<br />on the <em>horizon.</em></h2>
-        <p>Start with the changes ApiRadar can track today.<br />The three-month forecast is the next big goal.</p>
+        <p>Start with confirmed changes, or explore the experimental<br />three-month risk outlook.</p>
         <div className="hero-actions closing-actions">
           <button className="button-light" onClick={() => navigate('/dashboard/stack')}>BUILD A WATCHLIST <ArrowRight size={16} /></button>
           <button className="button-outline" onClick={() => navigate('/dashboard/feed')}>SEE THE CHANGE FEED <ArrowUpRight size={15} /></button>
+          <button className="button-outline" onClick={() => navigate('/dashboard/forecast')}>EXPLORE 90-DAY OUTLOOK <Radar size={15} /></button>
         </div>
         <footer className="landing-footer"><Link to="/" className="landing-brand"><span>API</span>RADAR<sup>®</sup></Link><span>KNOW BEFORE YOUR APIS BREAK.</span><span>APIRADAR © 2026</span></footer>
       </section>

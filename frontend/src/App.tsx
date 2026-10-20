@@ -6,6 +6,8 @@ import { useAuthStore } from './store/authStore'
 import Landing from './pages/Landing'
 import Login from './pages/Login'
 import Register from './pages/Register'
+import OAuthCallback from './pages/OAuthCallback'
+import Forecast from './pages/Forecast'
 import Dashboard from './pages/Dashboard'
 import Feed from './pages/Feed'
 import MyStack from './pages/MyStack'
@@ -38,11 +40,13 @@ export default function App() {
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/auth/callback" element={<OAuthCallback />} />
 
           {/* Dashboard Routes (Open to all, optional sign-in) */}
           <Route path="/dashboard" element={<Dashboard />}>
             <Route index element={<Navigate to="/dashboard/feed" replace />} />
             <Route path="feed" element={<Feed />} />
+            <Route path="forecast" element={<Forecast />} />
             <Route path="stack" element={<MyStack />} />
             <Route path="apis" element={<BrowseAPIs />} />
             <Route path="apis/:slug" element={<APIDetail />} />

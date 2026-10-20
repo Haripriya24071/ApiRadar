@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useToast } from '../store/toastStore'
 import { getErrorMessage } from '../lib/api'
+import OAuthButtons from '../components/auth/OAuthButtons'
 
 export default function Register() {
   const [email, setEmail] = useState('')
@@ -120,6 +121,8 @@ export default function Register() {
             {loading ? 'INITIALIZING TERMINAL...' : 'GET STARTED →'}
           </button>
         </form>
+
+        <OAuthButtons />
 
         <p className="mt-8 text-center text-xs font-['Space_Mono'] text-[var(--muted-light)]">
           ALREADY HAVE AN ACCOUNT?{' '}

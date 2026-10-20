@@ -11,39 +11,15 @@ import {
   ParsedAPIMatch,
 } from '../types'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
 })
-
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('apiradar_token')
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
-  }
-  return config
-})
-
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response && error.response.status === 401 && localStorage.getItem('apiradar_token')) {
-      localStorage.removeItem('apiradar_token')
-      if (
-        window.location.pathname !== '/login' &&
-        window.location.pathname !== '/register' &&
-        window.location.pathname !== '/'
-      ) {
-        window.location.href = '/login'
-      }
-    }
-    return Promise.reject(error)
-  }
-)
 
 export function getErrorMessage(error: any): string {
   if (error?.response?.data?.error) {
@@ -63,10 +39,13 @@ export function getErrorMessage(error: any): string {
 }
 
 export const authAPI = {
+  providers: (): Promise<{ google: boolean; github: boolean }> =>
+    api.get('/api/auth/providers').then((res) => res.data),
   register: (data: { email: string; password: string }): Promise<User> =>
     api.post('/api/auth/register', data).then((res) => res.data),
-  login: (data: { email: string; password: string }): Promise<{ access_token: string; token_type: string; user: User }> =>
+  login: (data: { email: string; password: string }): Promise<{ token_type: string; user: User }> =>
     api.post('/api/auth/login', data).then((res) => res.data),
+  logout: (): Promise<void> => api.post('/api/auth/logout').then((res) => res.data),
   me: (): Promise<User> => api.get('/api/auth/me').then((res) => res.data),
 }
 
@@ -118,4 +97,36 @@ export const notificationsAPI = {
   markAllRead: (): Promise<void> => api.patch('/api/notifications/read-all').then((res) => res.data),
   getCount: (): Promise<{ unread: number }> =>
     api.get('/api/notifications/count').then((res) => res.data),
+}
+
+export interface ForecastEvidence {
+  title: string
+  severity: string
+  published_at?: string | null
+  url: string
+}
+
+export interface APIChangeForecast {
+  id: string
+  api_slug: string
+  api_name: string
+  logo_url?: string | null
+  forecast_type: 'trend_risk' | 'announced_change'
+  status: 'forecast' | 'insufficient_history' | 'low_risk' | 'scheduled'
+  probability_percent?: number | null
+  confidence: 'low' | 'medium' | 'high'
+  horizon_days: number
+  expected_by?: string | null
+  title: string
+  summary: string
+  source_updates: number
+  actionable_updates: number
+  observed_days: number
+  generated_at: string
+  evidence: ForecastEvidence[]
+}
+
+export const forecastsAPI = {
+  list: (params?: { api_slugs?: string; horizon_days?: number }): Promise<APIChangeForecast[]> =>
+    api.get('/api/forecasts', { params }).then((res) => res.data),
 }
