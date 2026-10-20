@@ -75,8 +75,15 @@ export interface Notification {
   id: string
   user_id?: string
   event_id?: string
+  kind: 'change' | 'forecast'
   title: string
-  message: string
+  message?: string | null
+  severity?: string | null
+  api_slug?: string | null
+  api_name?: string | null
+  probability_percent?: number | null
+  confidence?: string | null
+  change_event?: ChangeEvent | null
   is_read: boolean
   created_at: string
 }

@@ -95,6 +95,7 @@ export const notificationsAPI = {
       unreadCount: parseInt(res.headers['x-unread-count'] || '0', 10),
     })),
   markAllRead: (): Promise<void> => api.patch('/api/notifications/read-all').then((res) => res.data),
+  markRead: (id: string): Promise<void> => api.patch(`/api/notifications/read/${id}`).then((res) => res.data),
   getCount: (): Promise<{ unread: number }> =>
     api.get('/api/notifications/count').then((res) => res.data),
 }

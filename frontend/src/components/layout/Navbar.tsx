@@ -25,7 +25,9 @@ export default function Navbar() {
   const { data: countData } = useQuery({
     queryKey: ['notifications-count'],
     queryFn: () => notificationsAPI.getCount(),
-    refetchInterval: 30000,
+    // Forecast inputs change on scraper cycles, so a five-minute refresh is
+    // frequent enough without recalculating history every few seconds.
+    refetchInterval: 300000,
     enabled: Boolean(user),
   })
 
@@ -43,7 +45,15 @@ export default function Navbar() {
     },
   })
 
-  const unreadCount = countData?.unread || 0
+  const markReadMutation = useMutation({
+    mutationFn: (id: string) => notificationsAPI.markRead(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications-count'] })
+      queryClient.invalidateQueries({ queryKey: ['notifications-list'] })
+    },
+  })
+
+  const unreadCount = notificationsData?.unreadCount ?? countData?.unread ?? 0
   const notificationsList = notificationsData?.data || []
 
   // ESC key to close search overlay
@@ -152,24 +162,47 @@ export default function Navbar() {
                       NO UNREAD ALERTS
                     </div>
                   ) : (
-                    notificationsList.map((n: any) => (
+                    notificationsList.map((n) => (
                       <div
                         key={n.id}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => {
+                          if (!n.is_read) markReadMutation.mutate(n.id)
+                          setShowNotificationsDropdown(false)
+                          navigate(n.kind === 'forecast' ? '/dashboard/forecast' : '/dashboard/feed')
+                        }}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault()
+                            if (!n.is_read) markReadMutation.mutate(n.id)
+                            setShowNotificationsDropdown(false)
+                            navigate(n.kind === 'forecast' ? '/dashboard/forecast' : '/dashboard/feed')
+                          }
+                        }}
                         className={`p-3 text-xs transition ${
                           !n.is_read ? 'bg-[var(--black)]/60' : 'hover:bg-[var(--black)]/30'
-                        }`}
+                        } cursor-pointer hover:bg-[var(--black)]/30 focus-visible:outline focus-visible:outline-1 focus-visible:outline-[var(--gold)]`}
                       >
                         <div className="flex items-center justify-between mb-1">
-                          <span className="severity-stamp critical">
-                            {n.change_event?.severity || 'CRITICAL'}
+                          <span className={`severity-stamp ${n.kind === 'forecast' || n.severity === 'WARNING' ? 'warning' : n.severity === 'INFO' ? 'info' : 'critical'}`}>
+                            {n.kind === 'forecast' ? `FORECAST${n.probability_percent == null ? '' : ` · ${n.probability_percent}%`}` : n.severity || 'CHANGE'}
                           </span>
                           <span className="font-['Space_Mono'] text-[9px] text-[var(--muted-dark)]">
                             {n.created_at ? new Date(n.created_at).toLocaleDateString() : ''}
                           </span>
                         </div>
                         <p className="font-medium text-[var(--cream)] line-clamp-2 mt-1">
-                          {n.change_event?.title || 'API Change Event'}
+                          {n.title}
                         </p>
+                        {n.api_name && (
+                          <p className="font-['Space_Mono'] text-[9px] text-[var(--muted-dark)] mt-1">
+                            {n.api_name}{n.confidence ? ` · ${n.confidence.toUpperCase()} CONFIDENCE` : ''}
+                          </p>
+                        )}
+                        {n.message && (
+                          <p className="text-[var(--muted-light)] line-clamp-2 mt-1">{n.message}</p>
+                        )}
                       </div>
                     ))
                   )}
