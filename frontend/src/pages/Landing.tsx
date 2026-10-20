@@ -1,353 +1,202 @@
-import React, { useState, useEffect, useRef } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useEffect, useRef } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import {
+  ArrowDown, ArrowRight, ArrowUpRight, Bell, CircleDot, FileCode2,
+  GitBranch, Radar, ScanSearch, ShieldAlert, Sparkles, WandSparkles,
+} from 'lucide-react'
+
+const providers = [
+  { name: 'STRIPE', mark: 'S', color: '#635bff', className: 'signal-one' },
+  { name: 'OPENAI', mark: '◎', color: '#10a37f', className: 'signal-two' },
+  { name: 'GITHUB', mark: 'GH', color: '#f0eee9', className: 'signal-three' },
+  { name: 'SUPABASE', mark: 'S', color: '#3ecf8e', className: 'signal-four' },
+  { name: 'TWILIO', mark: 'T', color: '#f22f46', className: 'signal-five' },
+  { name: 'GOOGLE', mark: 'G', color: '#4285f4', className: 'signal-six' },
+]
+
+const flow = [
+  {
+    n: '01', icon: FileCode2, title: 'Bring your stack',
+    copy: 'Drop in package.json or requirements.txt, or pick APIs yourself. No account needed.',
+    tag: 'YOUR PROJECT',
+  },
+  {
+    n: '02', icon: Radar, title: 'Choose what to watch',
+    copy: 'ApiRadar matches supported SDKs and builds a watchlist right in this browser.',
+    tag: 'YOUR WATCHLIST',
+  },
+  {
+    n: '03', icon: Bell, title: 'Catch published changes',
+    copy: 'When monitored sources publish a change, review its severity and migration notes in your feed.',
+    tag: 'YOUR CHANGE FEED',
+  },
+]
+
+const signals = [
+  { time: 'SOURCE', title: 'Provider publishes an update', detail: 'Release notes · changelog · API spec', icon: GitBranch },
+  { time: 'RADAR', title: 'Change gets analyzed', detail: 'Detected · classified · summarized', icon: ScanSearch },
+  { time: 'YOU', title: 'You get a clear next step', detail: 'Severity · impact · migration guidance', icon: ShieldAlert },
+]
 
 export default function Landing() {
   const navigate = useNavigate()
-  const [scrolled, setScrolled] = useState(false)
-  const [hoveredApi, setHoveredApi] = useState<string | null>(null)
+  const revealRefs = useRef<HTMLElement[]>([])
 
-  // Track navbar scroll state
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 100)
+    const nodes = revealRefs.current
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      nodes.forEach((node) => node.classList.add('radar-visible'))
+      return
     }
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
-
-  // IntersectionObserver for section fade-up transitions
-  const sectionRefs = useRef<(HTMLElement | null)[]>([])
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('animate-fade-up')
-            observer.unobserve(entry.target)
-          }
-        })
-      },
-      { threshold: 0.05, rootMargin: '0px 0px -50px 0px' }
-    )
-
-    sectionRefs.current.forEach((sec) => {
-      if (sec) observer.observe(sec)
-    })
-
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('radar-visible')
+          observer.unobserve(entry.target)
+        }
+      })
+    }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' })
+    nodes.forEach((node) => observer.observe(node))
     return () => observer.disconnect()
   }, [])
 
-  const apis = ['STRIPE', 'OPENAI', 'SUPABASE', 'TWILIO', 'GITHUB', 'SENDGRID']
-
-  const tickerItems = [
-    'STRIPE',
-    'OPENAI',
-    'SUPABASE',
-    'TWILIO',
-    'GITHUB',
-    'SENDGRID',
-    'BREAKING CHANGE DETECTED',
-    'API DIFF ENGINE',
-    'REAL-TIME MONITORING',
-  ]
-
-  const problemRows = [
-    {
-      num: '01',
-      title: 'Silent Endpoint Deprecations',
-      desc: 'APIs release breaking changes with short sunset windows buried in blog posts.',
-    },
-    {
-      num: '02',
-      title: 'OpenAPI Spec Drift',
-      desc: 'Field type changes and removed payload parameters silently break production code.',
-    },
-    {
-      num: '03',
-      title: 'Scattered Release Logs',
-      desc: 'Eng teams spend hours manually checking GitHub releases, RSS feeds, and docs.',
-    },
-  ]
-
-  const mechanismSteps = [
-    {
-      num: '01',
-      title: 'Multi-Source Scrape',
-      desc: 'Automated 6-hour cycles crawling RSS feeds, GitHub releases, and OpenAPI schemas.',
-      chip: '[RSS + GITHUB + OPENAPI]',
-    },
-    {
-      num: '02',
-      title: 'LLM Diff Intelligence',
-      desc: 'GPT-4o-mini extracts exact breaking changes, severity rankings, and migration guides.',
-      chip: '[GPT-4o-mini]',
-    },
-    {
-      num: '03',
-      title: 'Direct Feed & Digest',
-      desc: 'Instant web alert feeds plus custom daily HTML email summaries delivered at 8:00 AM.',
-      chip: '[YOUR INBOX]',
-    },
-  ]
+  const reveal = (node: HTMLElement | null) => {
+    if (node && !revealRefs.current.includes(node)) revealRefs.current.push(node)
+  }
 
   return (
-    <div className="min-h-screen bg-[var(--black)] text-[var(--cream)] font-['Space_Grotesk'] selection:bg-[var(--red)] selection:text-[var(--white)]">
-      {/* FIXED NAVBAR */}
-      <header
-        className={`fixed top-0 left-0 right-0 h-[64px] z-[100] transition-all duration-300 px-8 md:px-16 flex items-center justify-between ${
-          scrolled
-            ? 'bg-[var(--black)]/95 backdrop-blur-md border-b border-[var(--border-dark)]'
-            : 'bg-[var(--black)]/60 backdrop-blur-sm border-b border-[var(--border-dark)]/40'
-        }`}
-        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
-      >
-        {/* Left Corner Logo */}
-        <Link
-          to="/"
-          className="font-['Space_Mono'] text-[14px] font-bold tracking-[0.2em] text-[var(--cream)] hover:text-[var(--red)] transition-colors select-none"
-          data-cursor="hover"
-        >
-          APIRADAR©
-        </Link>
-
-        {/* Right Corner Action Row */}
-        <div className="flex items-center gap-6" style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-          <Link
-            to="/login"
-            className="font-['Space_Mono'] text-[11px] font-bold tracking-[0.15em] text-[var(--cream)] hover:text-[var(--red)] transition-colors uppercase"
-            data-cursor="hover"
-          >
-            SIGN IN (OPTIONAL)
-          </Link>
-          <button
-            onClick={() => navigate('/dashboard/stack')}
-            className="bg-[var(--cream)] text-[var(--black)] font-['Space_Mono'] text-[11px] font-bold tracking-[0.12em] px-5 py-2.5 hover:bg-[var(--red)] hover:text-[var(--white)] transition-all uppercase select-none cursor-pointer"
-            data-cursor="hover"
-          >
-            BUILD A WATCHLIST →
-          </button>
+    <main className="landing-shell">
+      <header className="landing-nav">
+        <Link to="/" className="landing-brand" aria-label="ApiRadar home"><span>API</span>RADAR<sup>®</sup></Link>
+        <div className="landing-nav-right">
+          <Link to="/login" className="landing-signin">SIGN IN <span>(OPTIONAL)</span></Link>
+          <button className="landing-nav-cta" onClick={() => navigate('/dashboard/stack')}>BUILD A WATCHLIST <ArrowUpRight size={15} /></button>
         </div>
       </header>
 
-      {/* SECTION 1 — HERO */}
-      <section
-        className="min-h-screen w-full flex flex-col justify-between pt-[15vh] pb-12 px-6 md:px-16 section-dark animate-fade-up"
-      >
-        <div className="max-w-6xl mx-auto w-full flex flex-col items-center text-center">
-          {/* Section Label */}
-          <div className="editorial-label mb-8">
-            00_1 // INTELLIGENCE SYSTEM
+      <section className="landing-hero">
+        <div className="hero-grid" aria-hidden="true" />
+        <div className="hero-orbit orbit-a" aria-hidden="true" />
+        <div className="hero-orbit orbit-b" aria-hidden="true" />
+        <div className="hero-copy">
+          <div className="eyebrow"><span className="live-dot" /> API CHANGE INTELLIGENCE <span className="eyebrow-index">ISSUE 001 / ALWAYS ON</span></div>
+          <h1><span className="hero-title-api">API</span><span className="hero-title-radar">RADAR</span></h1>
+          <p className="hero-subtitle">Know what changed.<br /><em>Before it breaks your build.</em></p>
+          <div className="hero-actions">
+            <button className="button-light" onClick={() => navigate('/dashboard/stack')}>BUILD YOUR WATCHLIST <ArrowRight size={16} /></button>
+            <button className="button-outline" onClick={() => navigate('/dashboard/feed')}>EXPLORE THE LIVE FEED <ArrowDown size={15} /></button>
           </div>
-
-          {/* SPLIT GIANT TEXT */}
-          <div className="relative inline-flex items-center justify-center flex-wrap gap-2 md:gap-4 my-2">
-            <div className="bg-[var(--red)] px-5 py-2 inline-block">
-              <span className="display-text text-[var(--white)] block">API</span>
-            </div>
-            <div className="bg-transparent px-2 py-2 inline-block">
-              <span className="display-text text-[var(--cream)] block">RADAR</span>
-            </div>
-          </div>
-          <div className="w-full max-w-[680px] text-right font-['Space_Mono'] text-[11px] text-[var(--muted-dark)] pr-2 -mt-2 mb-6">
-            ©2025
-          </div>
-
-          {/* Subtitle */}
-          <p className="text-[20px] font-light text-[var(--cream)] opacity-70 max-w-xl mt-4">
-            Know before your APIs break.
-          </p>
-
-          {/* Stat Row */}
-          <div className="font-['Space_Mono'] text-[11px] tracking-[0.15em] text-[var(--muted-dark)] mt-8 uppercase">
-            6 APIS MONITORED · REAL-TIME DIFFS · ZERO NOISE
-          </div>
-
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row items-center gap-4 mt-10">
-            <button
-              onClick={() => navigate('/dashboard/stack')}
-              className="bg-[var(--cream)] text-[var(--black)] font-['Space_Grotesk'] text-[13px] font-medium tracking-[0.05em] px-7 py-3.5 hover:bg-[var(--red)] hover:text-[var(--white)] transition-all uppercase"
-              data-cursor="hover"
-            >
-              BUILD A WATCHLIST
-            </button>
-            <button
-              onClick={() => navigate('/dashboard/feed')}
-              className="bg-transparent text-[var(--cream)] border border-[var(--border-dark)] font-['Space_Grotesk'] text-[13px] font-medium tracking-[0.05em] px-7 py-3.5 hover:border-[var(--cream)] transition-all uppercase"
-              data-cursor="hover"
-            >
-              SEE THE FEED →
-            </button>
-          </div>
+          <div className="hero-note"><Sparkles size={14} /> Start free in this browser. No sign-in required.</div>
         </div>
-
-        {/* Animated Scroll Indicator */}
-        <div className="flex flex-col items-center justify-center mt-16">
-          <div className="relative w-[2px] h-[40px] bg-[var(--border-dark)] overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-[12px] bg-[var(--cream)] animate-bounce" />
-          </div>
-          <span className="font-['Space_Mono'] text-[9px] text-[var(--muted-dark)] tracking-[0.2em] uppercase mt-2">
-            SCROLL
-          </span>
+        <div className="signal-cloud" aria-label="API providers monitored">
+          {providers.map((provider) => (
+            <div key={provider.name} className={`signal-chip ${provider.className}`}>
+              <span className="signal-mark" style={{ color: provider.color }}>{provider.mark}</span>
+              <span>{provider.name}</span><i />
+            </div>
+          ))}
+          <div className="radar-center"><Radar size={35} strokeWidth={1.4} /><span>RADAR<br />ACTIVE</span></div>
+          <div className="signal-caption">A wider view of the APIs your product depends on.</div>
         </div>
+        <a href="#story" className="scroll-cue"><span>SCROLL TO SEE HOW IT WORKS</span><ArrowDown size={15} /></a>
+        <div className="hero-stamp" aria-hidden="true">DEPENDENCY<br />INTELLIGENCE<br /><b>● LIVE</b></div>
       </section>
 
-      {/* TICKER BAND */}
-      <div className="ticker-band border-y border-[var(--border-dark)]">
-        <div className="ticker-inner">
-          {[...tickerItems, ...tickerItems].map((item, idx) => (
-            <span key={idx} className="inline-flex items-center gap-2">
-              {item} <span className="opacity-50">·</span>
-            </span>
-          ))}
-        </div>
+      <div className="ticker-band landing-ticker" aria-hidden="true">
+        <div className="ticker-inner">{[...providers, ...providers].map((p, i) => <span key={`${p.name}-${i}`} className="ticker-word"><b>{p.mark}</b> {p.name} <i>✳</i></span>)}<span className="ticker-word">OFFICIAL SOURCE WATCH <i>✳</i></span></div>
       </div>
 
-      {/* SECTION 2 — THE PROBLEM */}
-      <section
-        ref={(el) => (sectionRefs.current[1] = el)}
-        className="py-24 px-6 md:px-16 section-light relative overflow-hidden"
-      >
-        <div className="max-w-6xl mx-auto relative">
-          <div className="editorial-label mb-12">00_2 // THE PROBLEM</div>
-
-          {/* Giant Background Number */}
-          <div className="absolute -top-12 -left-8 font-['Space_Mono'] text-[180px] md:text-[220px] font-bold text-[var(--border-light)] pointer-events-none select-none opacity-60 leading-none">
-            3
-          </div>
-
-          <h2 className="relative z-10 text-[36px] md:text-[48px] font-bold leading-none mb-16 text-[var(--text-on-light)]">
-            Your APIs are changing.
-            <br />
-            Right now. Without warning.
-          </h2>
-
-          {/* Pain Point Rows */}
-          <div className="border-t border-[var(--border-light)] mt-8">
-            {problemRows.map((row) => (
-              <div
-                key={row.num}
-                className="group border-b border-[var(--border-light)] py-8 px-4 md:px-8 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all duration-300 hover:bg-[var(--black)] hover:text-[var(--cream)]"
-                data-cursor="hover"
-              >
-                <div className="flex items-start md:items-center gap-6 md:gap-12">
-                  <span className="font-['Space_Mono'] text-[12px] text-[var(--muted-dark)] group-hover:text-[var(--gold)] transition-colors">
-                    {row.num}
-                  </span>
-                  <h3 className="text-[20px] font-medium tracking-tight">
-                    {row.title}
-                  </h3>
-                </div>
-                <p className="text-[14px] text-[var(--muted-dark)] group-hover:text-[var(--muted-light)] max-w-md transition-colors">
-                  {row.desc}
-                </p>
-              </div>
-            ))}
-          </div>
+      <section id="story" ref={reveal} className="story-section reveal-section">
+        <div className="story-heading">
+          <div className="eyebrow dark-eyebrow">01 / THE PROBLEM</div>
+          <h2>Change is normal.<br /><span>Finding out late isn’t.</span></h2>
+          <p>Important API updates hide in release notes, changelogs, and spec files. ApiRadar brings the signal into one place, so you can decide what to do next.</p>
+        </div>
+        <div className="problem-art" aria-label="Scattered API updates converge into a single radar signal">
+          <div className="orbit-line orbit-line-one" /><div className="orbit-line orbit-line-two" />
+          <div className="problem-tag tag-release">RELEASE NOTES <span>v4.2.0</span></div>
+          <div className="problem-tag tag-spec">OPENAPI SPEC <span>DIFF FOUND</span></div>
+          <div className="problem-tag tag-blog">PROVIDER BLOG <span>NEW POST</span></div>
+          <div className="problem-radar"><Radar size={54} strokeWidth={1.2} /><span>ONE CLEAR<br />SIGNAL</span></div>
+          <div className="problem-alert"><span className="severity-dot" /> BREAKING CHANGE FOUND <ArrowRight size={13} /></div>
+          <div className="art-caption">NO MORE TAB-HOPPING <span>✳</span> JUST THE CHANGES THAT MATTER</div>
         </div>
       </section>
 
-      {/* SECTION 3 — HOW IT WORKS */}
-      <section
-        ref={(el) => (sectionRefs.current[2] = el)}
-        className="py-24 px-6 md:px-16 section-dark border-t border-[var(--border-dark)]"
-      >
-        <div className="max-w-6xl mx-auto">
-          <div className="editorial-label mb-16">00_3 // MECHANISM</div>
+      <section ref={reveal} className="monitor-section reveal-section">
+        <div className="monitor-intro">
+          <div className="eyebrow"><span className="live-dot" /> 02 / THE RADAR LOOP</div>
+          <h2>From provider signal<br />to your next move.</h2>
+          <p>Three clear steps take a newcomer from “what is this?” to a watchlist that makes sense.</p>
+        </div>
+        <div className="signal-timeline">
+          {signals.map((item, index) => {
+            const Icon = item.icon
+            return <article key={item.time} className={`timeline-card timeline-card-${index + 1}`}>
+              <div className="timeline-top"><span>{item.time} / 0{index + 1}</span><Icon size={19} /></div>
+              <h3>{item.title}</h3><p>{item.detail}</p>
+              <div className="timeline-progress"><span style={{ width: `${(index + 1) * 31}%` }} /></div>
+              {index < signals.length - 1 && <ArrowRight className="timeline-arrow" size={18} />}
+            </article>
+          })}
+        </div>
+        <div className="monitor-footnote"><CircleDot size={14} /> Current monitoring reports published changes from configured provider sources.</div>
+      </section>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-0 border-t border-b md:border-b-0 border-[var(--border-dark)]">
-            {mechanismSteps.map((step, index) => (
-              <div
-                key={step.num}
-                className={`p-8 md:p-10 flex flex-col justify-between min-h-[320px] ${
-                  index !== mechanismSteps.length - 1
-                    ? 'border-b md:border-b-0 md:border-r border-[var(--border-dark)]'
-                    : ''
-                }`}
-              >
-                <div>
-                  <div className="font-['Space_Mono'] text-[56px] md:text-[64px] font-bold text-[var(--border-dark)] leading-none mb-6">
-                    {step.num}
-                  </div>
-                  <h3 className="text-[24px] font-bold mb-4 tracking-tight">
-                    {step.title}
-                  </h3>
-                  <p className="text-[14px] font-light text-[var(--muted-light)] leading-relaxed mb-8">
-                    {step.desc}
-                  </p>
-                </div>
-                <div className="font-['Space_Mono'] text-[10px] tracking-[0.15em] text-[var(--red)] uppercase">
-                  {step.chip}
-                </div>
-              </div>
-            ))}
+      <section ref={reveal} className="forecast-section reveal-section">
+        <div className="forecast-orbit" aria-hidden="true"><span /><span /><span /><span /></div>
+        <div className="forecast-copy">
+          <div className="eyebrow"><WandSparkles size={14} /> 03 / THE BIGGER VISION</div>
+          <div className="forecast-kicker">AIMING FOR A <b>90-DAY</b> HEAD START</div>
+          <h2>See the risk<br />on the horizon.</h2>
+          <p>ApiRadar’s ambition is to forecast likely API changes up to three months ahead, using signals that emerge before a breaking release. That forecasting capability is <strong>not live yet</strong>.</p>
+          <div className="forecast-status"><span className="status-dash" /> TODAY: TRACKING OFFICIAL, PUBLISHED CHANGES <span className="status-next">FORECASTING: FUTURE CAPABILITY</span></div>
+        </div>
+        <div className="forecast-visual" aria-label="Illustrative timeline from early signals toward a possible future change">
+          <div className="forecast-window"><div className="forecast-window-head"><span>HORIZON / 90 DAYS</span><span className="forecast-badge">VISION · NOT LIVE</span></div>
+            <div className="forecast-track"><span className="track-past" /><span className="track-future" /><i className="track-now" /><i className="track-target" /></div>
+            <div className="forecast-dates"><span>NOW</span><span>EARLY SIGNALS</span><span>UP TO 3 MONTHS</span></div>
+            <div className="forecast-placeholder"><div className="placeholder-icon"><Radar size={25} /></div><div><b>Future risk forecast</b><span>Illustrative concept — no prediction generated</span></div><span className="placeholder-lock">IN DEVELOPMENT</span></div>
+            <div className="forecast-window-foot"><span>FORECAST CONFIDENCE</span><span>— &nbsp; NOT AVAILABLE</span></div>
           </div>
+          <span className="forecast-side-note">THE GOAL IS TO SURFACE A SIGNAL BEFORE THE CHANGE IS ANNOUNCED.</span>
         </div>
       </section>
 
-      {/* SECTION 4 — APIS */}
-      <section
-        ref={(el) => (sectionRefs.current[3] = el)}
-        className="py-24 px-6 md:px-16 section-light border-t border-[var(--border-light)]"
-      >
-        <div className="max-w-6xl mx-auto">
-          <div className="editorial-label mb-12">00_4 // STACK</div>
-
-          <h2 className="text-[36px] md:text-[48px] font-bold leading-none mb-16 text-[var(--text-on-light)]">
-            6 APIs. Watched. Always.
-          </h2>
-
-          <div className="py-12 border-y border-[var(--border-light)] flex flex-wrap items-center justify-center md:justify-between gap-y-6 gap-x-4">
-            {apis.map((api, idx) => (
-              <React.Fragment key={api}>
-                <span
-                  onMouseEnter={() => setHoveredApi(api)}
-                  onMouseLeave={() => setHoveredApi(null)}
-                  className={`font-['Space_Grotesk'] text-[24px] md:text-[32px] font-light tracking-tight transition-all duration-200 cursor-pointer ${
-                    hoveredApi === api
-                      ? 'text-[var(--red)] underline underline-offset-8 decoration-2'
-                      : 'text-[var(--text-on-light)]'
-                  }`}
-                  data-cursor="hover"
-                >
-                  {api}
-                </span>
-                {idx !== apis.length - 1 && (
-                  <span className="text-[var(--muted-light)] text-[20px] select-none">
-                    ·
-                  </span>
-                )}
-              </React.Fragment>
-            ))}
-          </div>
+      <section ref={reveal} className="newbie-section reveal-section">
+        <div className="newbie-head">
+          <div><div className="eyebrow dark-eyebrow">04 / YOUR FIRST MINUTE</div><h2>New here?<br /><span>Start right here.</span></h2></div>
+          <div className="newbie-aside">No setup ceremony.<br />No account gate.<br /><b>Just pick a starting point.</b></div>
         </div>
+        <div className="flow-cards">
+          {flow.map((step, index) => {
+            const Icon = step.icon
+            return <article key={step.n} className="flow-card">
+              <div className="flow-card-head"><span>{step.n} / 03</span><Icon size={23} strokeWidth={1.5} /></div>
+              <div><h3>{step.title}</h3><p>{step.copy}</p></div>
+              <div className="flow-card-foot"><span>{step.tag}</span>{index < 2 && <ArrowRight size={15} />}</div>
+            </article>
+          })}
+        </div>
+        <div className="flow-file-note"><FileCode2 size={16} /><span><b>About your file:</b> the current scanner recognizes supported SDK dependencies. It does not inspect source code or predict changes from the file.</span></div>
       </section>
 
-      {/* SECTION 5 — FINAL CTA */}
-      <section
-        ref={(el) => (sectionRefs.current[4] = el)}
-        className="py-28 px-6 md:px-16 section-dark border-t border-[var(--border-dark)] relative"
-      >
-        <div className="max-w-4xl mx-auto text-center flex flex-col items-center">
-          <h2 className="display-text text-[var(--cream)] mb-4">READY?</h2>
-          <p className="text-[18px] font-light opacity-60 mb-10">
-            Set up takes 60 seconds.
-          </p>
-          <button
-            onClick={() => navigate('/dashboard/apis')}
-            className="bg-[var(--cream)] text-[var(--black)] font-['Space_Grotesk'] text-[13px] font-medium tracking-[0.05em] px-8 py-4 hover:bg-[var(--red)] hover:text-[var(--white)] transition-all uppercase"
-            data-cursor="hover"
-          >
-            EXPLORE APIS
-          </button>
-        </div>
-
-        <div className="max-w-6xl mx-auto mt-24 pt-8 border-t border-[var(--border-dark)] flex items-center justify-between font-['Space_Mono'] text-[10px] text-[var(--muted-dark)] uppercase">
-          <span>APIRADAR INTELLIGENCE SYSTEM</span>
-          <span>APIRADAR © 2025</span>
-        </div>
+      <section ref={reveal} className="api-wall reveal-section">
+        <div className="api-wall-head"><div className="eyebrow">05 / THE SIGNAL NETWORK</div><h2>Many providers.<br /><span>One radar.</span></h2><p>Logo tokens are the providers in ApiRadar’s catalog. Coverage depends on the sources configured for each API.</p></div>
+        <div className="provider-wall">{providers.map((provider, i) => <div className={`provider-tile provider-tile-${i + 1}`} key={provider.name}><span className="provider-logo" style={{ color: provider.color }}>{provider.mark}</span><span>{provider.name}</span><ArrowUpRight size={13} /></div>)}<div className="provider-center"><Radar size={32} /><span>APIRADAR</span></div></div>
       </section>
-    </div>
+
+      <section className="closing-section">
+        <div className="closing-spark" aria-hidden="true">✳</div>
+        <div className="eyebrow">READY WHEN YOU ARE / NO ACCOUNT REQUIRED</div>
+        <h2>Keep your eyes<br />on the <em>horizon.</em></h2>
+        <p>Start with the changes ApiRadar can track today.<br />The three-month forecast is the next big goal.</p>
+        <div className="hero-actions closing-actions">
+          <button className="button-light" onClick={() => navigate('/dashboard/stack')}>BUILD A WATCHLIST <ArrowRight size={16} /></button>
+          <button className="button-outline" onClick={() => navigate('/dashboard/feed')}>SEE THE CHANGE FEED <ArrowUpRight size={15} /></button>
+        </div>
+        <footer className="landing-footer"><Link to="/" className="landing-brand"><span>API</span>RADAR<sup>®</sup></Link><span>KNOW BEFORE YOUR APIS BREAK.</span><span>APIRADAR © 2026</span></footer>
+      </section>
+    </main>
   )
 }
