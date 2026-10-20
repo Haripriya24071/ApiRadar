@@ -244,6 +244,32 @@ docker exec -it apiradar_backend python seed_catalog.py
 
 Open **http://localhost:5173**
 
+### Local OAuth and sign-in alert setup
+
+OAuth buttons stay disabled until the provider credentials are added to `backend/.env`.
+Use `backend/.env.example` as the template and keep real secrets out of Git.
+
+| Provider | Local application URL | Exact callback URL | Environment variables |
+|---|---|---|---|
+| Google OAuth Web client | Authorized JavaScript origin: `http://localhost:5173` | `http://localhost:8000/api/auth/google/callback` | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` |
+| GitHub OAuth App | Homepage: `http://localhost:5173/` | `http://localhost:8000/api/auth/github/callback` | `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` |
+| Resend sign-in alerts | Verified sender address required | Not applicable | `RESEND_API_KEY`, `EMAIL_FROM` |
+
+After editing `backend/.env`, restart the backend. Sign-in alert emails are sent only
+when an account is used from a browser that has not signed into that account before.
+The browser identifier is stored in an HttpOnly cookie; ApiRadar stores only its
+keyed hash. Email alerts are skipped until both Resend settings are configured.
+
+### 90-day forecast
+
+The dashboard estimates the chance of at least one warning or breaking-change signal
+over the next 90 days from a provider's sourced update history. It needs at least 180
+days of observed history, 20 distinct source updates, and 3 actionable updates before
+showing an estimate. Each estimate includes linked source evidence. Provider-published
+future dates are listed separately as announced changes. This is an experimental
+historical-rate estimate; it does not predict a specific unpublished endpoint change
+or provider roadmap, and its calibration must be assessed against future outcomes.
+
 ### Development Commands
 
 ```bash
