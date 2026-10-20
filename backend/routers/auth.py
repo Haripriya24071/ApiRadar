@@ -7,6 +7,7 @@ import httpx
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, Response, status
 from fastapi.responses import RedirectResponse
 from jose import jwk, jwt as jose_jwt
+from jose.exceptions import JWTClaimsError
 from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -122,6 +123,23 @@ def _validate_oauth_state(provider: str, state: str, request: Request) -> bool:
 
 def _clear_oauth_cookie(response: Response) -> None:
     response.delete_cookie(OAUTH_STATE_COOKIE, path="/api/auth", secure=_secure_cookie(), httponly=True, samesite="lax")
+
+
+def _oauth_error_summary(exc: Exception) -> str:
+    """Describe upstream/auth failures without logging credentials or tokens."""
+    if isinstance(exc, JWTClaimsError):
+        return f"identity-token claims rejected: {str(exc)[:160]}"
+    if isinstance(exc, httpx.HTTPStatusError):
+        provider_error = ""
+        try:
+            provider_error = str(exc.response.json().get("error", ""))[:80]
+        except (ValueError, AttributeError):
+            pass
+        suffix = f" ({provider_error})" if provider_error else ""
+        return f"provider returned HTTP {exc.response.status_code}{suffix}"
+    if isinstance(exc, httpx.RequestError):
+        return f"provider connection failed: {type(exc).__name__}"
+    return type(exc).__name__
 
 
 async def _google_profile(code: str, nonce: str) -> tuple[str, str]:
@@ -297,7 +315,7 @@ async def google_callback(
     try:
         return await _complete_provider_login("google", code, request, db, background_tasks)
     except Exception as exc:
-        print(f"[OAuth] Google sign-in failed: {type(exc).__name__}")
+        print(f"[OAuth] Google sign-in failed: {_oauth_error_summary(exc)}")
         return _redirect_auth_error("google_signin_failed")
 
 
@@ -317,7 +335,7 @@ async def github_callback(
     try:
         return await _complete_provider_login("github", code, request, db, background_tasks)
     except Exception as exc:
-        print(f"[OAuth] GitHub sign-in failed: {type(exc).__name__}")
+        print(f"[OAuth] GitHub sign-in failed: {_oauth_error_summary(exc)}")
         return _redirect_auth_error("github_signin_failed")
 
 
